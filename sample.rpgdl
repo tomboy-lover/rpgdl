@@ -1,0 +1,76 @@
+# ---------------------------------------------------------
+# RPGDL MASTER TEST SCRIPT
+# This file contains all supported syntax for your Godot parser.
+# Use this to test your RegEx loops, flattening logic, and extraction.
+# ---------------------------------------------------------
+
+# 1. Namespace Override (Forces CSV keys to use this prefix instead of filename)
+namespace: master_test
+
+# 2. Imports (Linking shared macros or labels without copy-pasting)
+import "res://dialogue/shared_macros.rpgdl"
+
+# 3. Global Definitions (Usually parsed once in a globals.rpgdl file)
+define npc_hero = Character("Hero", "res://art/portraits/hero.tres")
+define npc_smith = Character("Blacksmith", "res://art/portraits/smith", "CHAR_SMITH_CUSTOM")
+define sfx = Audio("res://audio/sfx")
+define bgm = Audio("res://audio/music")
+
+# 4. Standard Labels (Anchors for jumps)
+label start:
+    
+    # 5. Standalone Audio Commands (Sequential audio execution)
+    play bgm "town_theme"
+
+    # 6. Basic Dialogue with Inline Voice Tag and Manual Translation Key Override
+    npc_smith "Where is my hammer?!" <voice: angry_grunt> #SMITH_001
+
+    # 7. Full Dialogue with Portrait Emotion and BBCode Text Effects
+    npc_hero surprised "I thought you left it by the [wave amp=50 freq=2]river[/wave]?"
+    
+    # 8. Dialogue with Dynamic Text Variables (String formatting)
+    npc_smith angry "No, {player_name}, I left it right here!"
+    
+    # 9. Emitting Godot Signals (Event Bus Triggers with arguments)
+    emit start_quest("find_hammer", 100)
+    
+    # 10. Multi-line Block: Menus & Choices
+    menu:
+        "I will help you find it.":
+            # 11. Setting Logic Variables (Math & Game State)
+			# test
+            $ karma += 1
+            $ accepted_quest = true
+            play sfx "quest_accept"
+            
+            # 12. Jump Command
+            jump search_river
+            
+        "I don't have time for this.":
+            $ karma -= 1
+            
+            # Nested dialogue inside a menu choice (Requires parser flattening)
+            npc_hero sad "Sorry, I am too busy."
+            jump leave_shop
+
+label search_river:
+    
+    # 13. Multi-line Block: If / Elif / Else Conditions (Chain of evaluations)
+    if karma > 10:
+        npc_smith happy "You have always been a good friend."
+        $ gold += 50
+    elif karma == 10:
+        npc_smith neutral "Thank you. Please hurry."
+    else:
+        npc_smith angry "Just don't steal anything while you're at it!"
+        emit decrease_reputation()
+
+    jump end_scene
+
+label leave_shop:
+    npc_smith "Then leave me be."
+    play sfx "door_slam"
+    
+label end_scene:
+    # End of script execution test
+    emit fade_out_screen()

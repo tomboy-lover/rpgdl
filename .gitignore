@@ -1,0 +1,40 @@
+# ====================================================================
+# Godot Engine Ignores
+# ====================================================================
+# Auto-generated project cache, import data, and binary logs
+.godot/
+
+# Godot 3.x specific cache folder (keep if using Godot 3)
+.import/
+
+# Machine-specific editor layouts and workspace configurations
+.editor_layout
+mono_crash_release.json
+
+# ====================================================================
+# Mono / C# Specific Ignores (Safe to keep even if using GDScript)
+# ====================================================================
+bld/
+bin/
+obj/
+.vs/
+.vscode/
+*.sln
+*.csproj
+
+# ====================================================================
+# Build & Export Artifacts
+# ====================================================================
+# Prevents exported game binaries from entering source control
+export_presets.cfg
+
+# Add your specific build export folder here if you use one, for example:
+# /exports/
+
+# ====================================================================
+# Documentation & Website Ignores (MkDocs)
+# ====================================================================
+# Auto-generated MkDocs build output folder
+site/
+dist/
+

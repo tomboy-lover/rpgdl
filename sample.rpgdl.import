@@ -1,0 +1,14 @@
+[remap]
+
+importer="rpgdl.parser"
+type="Resource"
+uid="uid://bgwhrew60rn50"
+path="res://.godot/imported/sample.rpgdl-da3e1fefc5b06d30f66f2ce0df080c8f.res"
+
+[deps]
+
+source_file="res://sample.rpgdl"
+dest_files=["res://.godot/imported/sample.rpgdl-da3e1fefc5b06d30f66f2ce0df080c8f.res"]
+
+[params]
+
