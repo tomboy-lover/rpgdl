@@ -1,0 +1,13 @@
+site_name: RPGDL
+nav:
+  - Getting Started:
+    - Introduction: index.md
+    - Integration & Setup: integration.md
+  - RPGDL Language:
+    - Syntax Reference: syntax.md
+    - Branching & Menus: branching.md
+    - Manga Panels & UI: visuals.md
+  - Engine Architecture:
+    - Code Reference: architecture.md
+    - The Event Bus: event_bus.md
+theme: readthedocs
