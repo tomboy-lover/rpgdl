@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Introduction - RPGDL</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Introduction";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> RPGDL
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Introduction</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#key-features">✨ Key Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-build-rpgdl">🚀 Why build RPGDL?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#navigation">📖 Navigation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="integration/">Integration & Setup</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">RPGDL Language</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="syntax/">Syntax Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="branching/">Branching & Menus</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="visuals/">Manga Panels & UI</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Engine Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/">Code Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="event_bus/">The Event Bus</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">RPGDL</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Introduction</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="welcome-to-rpgdl-engine">Welcome to RPGDL Engine</h1>
+<p><strong>RPGDL (RPG Dialogue Language)</strong> is a lightning-fast, Ren'Py-style dialogue parser and runtime engine designed specifically for Godot 4. </p>
+<p>Built to keep writers out of complex visual node graphs and inside their favorite text editors, RPGDL introduces a clean, indentation-aware markup language (<code>.rpgdl</code>). It allows developers and writers to script branching narratives, trigger game logic, and manage translations seamlessly.</p>
+<hr />
+<h2 id="key-features">✨ Key Features</h2>
+<ul>
+<li><strong>Zero Runtime Overhead:</strong> Instead of parsing text files at runtime, RPGDL acts as a true compiler. It leverages Godot's <code>EditorImportPlugin</code> to silently convert your text files into highly-optimized binary arrays the moment you hit save. Your players experience 0.0ms of parsing lag.</li>
+<li><strong>Writer-Friendly Markup:</strong> Write dialogue, define character portraits, and build branching menus using a clean, Python/Ren'Py-inspired syntax.</li>
+<li><strong>Native Localization Support:</strong> The compiler automatically extracts spoken text and generates unique keys for Godot's built-in CSV translation server. Translators never see your code; they only see the text.</li>
+<li><strong>Complex Branching &amp; Logic:</strong> Supports nested <code>if/elif/else</code> conditions and dialogue menus. The compiler automatically "flattens" these structures into linear jumps so the runtime engine stays lightweight.</li>
+<li><strong>Dynamic Variables &amp; Math:</strong> Safely execute game logic directly from the dialogue script (e.g., <code>$ gold += 10</code>) using Godot's native <code>Expression</code> class.</li>
+<li><strong>Engine Integration:</strong> Easily trigger game events by emitting global Godot signals directly from your script (e.g., <code>emit start_quest("find_sword")</code>).</li>
+<li><strong>Visual Novel &amp; Manga Panels:</strong> Advanced built-in support for controlling UI layouts, triggering manga-style panel reveals, and dynamic scene transitions directly from text.</li>
+</ul>
+<h2 id="why-build-rpgdl">🚀 Why build RPGDL?</h2>
+<p>While incredible tools like Dialogic exist, they often come with massive ecosystems (their own saving subsystems, audio managers, and heavy UI editors). If you install them, you are effectively installing a visual novel engine inside of your RPG.</p>
+<p><strong>RPGDL is a micro-tool.</strong> It does exactly two things: 
+1. It compiles text files into flat Godot Arrays.
+2. It reads those Arrays to update your UI.</p>
+<p>It natively points to your game's data, has almost zero file size, and adds zero background processes to your game unless someone is actively speaking. It is mathematically as fast as Godot can possibly run.</p>
+<hr />
+<h2 id="navigation">📖 Navigation</h2>
+<ul>
+<li><strong><a href="integration/">Integration &amp; Setup</a>:</strong> Learn how to install the addon and use the custom Godot Editor workspace.</li>
+<li><strong><a href="syntax/">Syntax Reference</a>:</strong> Your daily cheat sheet for writing <code>.rpgdl</code> scripts.</li>
+<li><strong><a href="branching/">Branching &amp; Menus</a>:</strong> Deep dive into handling <code>if/else</code> logic and player choices.</li>
+<li><strong><a href="visuals/">Manga Panels &amp; UI</a>:</strong> Learn how to trigger visual changes, background swaps, and dynamic manga panels.</li>
+<li><strong><a href="architecture/">Architecture</a>:</strong> For developers who want to understand how the compiler flattens data and how to use the Event Bus.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="integration/" class="btn btn-neutral float-right" title="Integration & Setup">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+      <span><a href="integration/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

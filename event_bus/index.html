@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>The Event Bus - RPGDL</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "The Event Bus";
+        var mkdocs_page_input_path = "event_bus.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> RPGDL
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="..">Introduction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../integration/">Integration & Setup</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">RPGDL Language</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../syntax/">Syntax Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../branching/">Branching & Menus</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../visuals/">Manga Panels & UI</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Engine Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Code Reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">The Event Bus</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#the-delegate-signal">The Delegate Signal</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#setting-up-your-games-event-bus">Setting up your Game's Event Bus</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-this-architecture-is-powerful">Why this Architecture is Powerful</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">RPGDL</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Engine Architecture</li>
+      <li class="breadcrumb-item active">The Event Bus</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="the-event-bus">The Event Bus</h1>
+<p>One of the core design philosophies of RPGDL is that it should never try to guess your game's architecture. It shouldn't need to know about your <code>InventoryManager</code>, your <code>QuestManager</code>, or your <code>CombatEngine</code>.</p>
+<p>To achieve this absolute decoupling, RPGDL relies on an <strong>Event Bus</strong> pattern using a Delegate Signal.</p>
+<h2 id="the-delegate-signal">The Delegate Signal</h2>
+<p>When your writers type an <code>emit</code> command in an <code>.rpgdl</code> file:</p>
+<pre><code class="language-rpgdl"># dialogue.rpgdl
+npc_hero &quot;Here, take this potion.&quot;
+emit give_item(&quot;potion&quot;, 1)
+</code></pre>
+<p>The <code>DialogueManager</code> does <em>not</em> try to call <code>Inventory.give_item()</code>. Instead, it broadcasts a single, generic signal.</p>
+<p>Every <code>DialogueManager</code> has this built-in signal:</p>
+<pre><code class="language-gdscript">signal dialogue_event(event_name: String, args: Array)
+</code></pre>
+<p>When the runtime engine reaches the <code>emit give_item("potion", 1)</code> instruction, it fires:
+<code>dialogue_event.emit("give_item", ["potion", 1])</code></p>
+<h2 id="setting-up-your-games-event-bus">Setting up your Game's Event Bus</h2>
+<p>To bridge the gap between the dialogue text and your actual gameplay, you should create a simple AutoLoad (e.g., <code>EventBus.gd</code>) that acts as the central routing hub.</p>
+<pre><code class="language-gdscript"># EventBus.gd (AutoLoad)
+extends Node
+
+func _ready():
+    # Connect to the DialogueManager's generic broadcast
+    DialogueManager.dialogue_event.connect(_on_dialogue_event)
+
+func _on_dialogue_event(event_name: String, args: Array):
+    match event_name:
+        &quot;give_item&quot;:
+            # args[0] is item name, args[1] is amount
+            InventoryManager.add_item(args[0], args[1])
+
+        &quot;start_quest&quot;:
+            QuestManager.start(args[0])
+
+        &quot;take_damage&quot;:
+            CombatManager.deal_damage(args[0])
+
+        _:
+            push_warning(&quot;Unknown dialogue event emitted: &quot; + event_name)
+</code></pre>
+<h2 id="why-this-architecture-is-powerful">Why this Architecture is Powerful</h2>
+<ul>
+<li><strong>Total Decoupling:</strong> Your dialogue engine can be copy-pasted into your next 10 Godot projects without changing a single line of its internal code. It has zero external dependencies.</li>
+<li><strong>Writer Freedom (No Crashes):</strong> Writers can invent new events on the fly in the script (e.g., <code>emit shake_camera()</code>). If you haven't programmed that logic into the game yet, it just silently fails (or throws the warning you set up in the <code>match</code> statement) instead of crashing the engine with a "missing method" error.</li>
+<li><strong>Centralized Logic:</strong> You always know exactly where dialogue transitions into gameplay—right inside your <code>EventBus.gd</code> script.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../architecture/" class="btn btn-neutral float-left" title="Code Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../architecture/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
