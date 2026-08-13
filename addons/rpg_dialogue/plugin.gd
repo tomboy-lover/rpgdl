@@ -5,6 +5,13 @@ var import_plugin
 var editor_tab : Control
 const PLUGIN_NAME = "RpgDL"
 
+const RPGDL_NODE = "RpgdlNode"
+const RPGDL_UI_NODE = "RpgdlUi"
+const RPGDL_AUDIO_NODE = "RpgdlAudioPlayer"
+const RPGDL_BBLR_NODE = "RpgdlSpeechBubbler"
+const RPGDL_POPUP_NODE = "RpgdlPopup"
+const AUTO_LD_NAME = "RpgdlWorld"
+
 func _enable_plugin() -> void:
 	# Add autoloads here.
 	pass
@@ -17,19 +24,42 @@ func _disable_plugin() -> void:
 
 func _enter_tree() -> void:
 	
+	load("res://addons/rpg_dialogue/rpgdl_resource.gd")
+	load("res://addons/rpg_dialogue/audio_channel_resource.gd")
+	
+	add_autoload_singleton(AUTO_LD_NAME, "res://addons/rpg_dialogue/rpgdl_signalbus.gd")
+	
 	# .rpgdl file importer
-	import_plugin = preload("res://addons/rpg_dialogue/rpgdl_importer.gd").new()
+	import_plugin = load("res://addons/rpg_dialogue/rpgdl_importer.gd").new()
 	add_import_plugin(import_plugin)
 	
+	
 	# Editor Custom Tab
-	var editor_scene = preload("res://addons/rpg_dialogue/rpgdl_workspace.tscn")
+	var editor_scene = load("res://addons/rpg_dialogue/rpgdl_workspace.tscn")
 	editor_tab = editor_scene.instantiate()
 	_make_visible(false)
 	EditorInterface.get_editor_main_screen().add_child(editor_tab)
 	
+	# Custom RPGDL Node
+	add_custom_type(RPGDL_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_node.gd"), load("res://icon.svg"))
+	add_custom_type(RPGDL_UI_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd"), load("res://icon.svg"))
+	add_custom_type(RPGDL_BBLR_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_sprite_bubbler.gd"), load("res://icon.svg"))
+	add_custom_type(RPGDL_POPUP_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_popup.gd"), load("res://icon.svg"))
+	add_custom_type(RPGDL_AUDIO_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_audio_player.gd"), load("res://icon.svg"))
+	
 
 
 func _exit_tree() -> void:
+	
+	remove_autoload_singleton(AUTO_LD_NAME)
+	
+	# custom RPGDL Nodes
+	remove_custom_type(RPGDL_UI_NODE)
+	remove_custom_type(RPGDL_BBLR_NODE)
+	remove_custom_type(RPGDL_POPUP_NODE)
+	remove_custom_type(RPGDL_AUDIO_NODE)
+	remove_custom_type(RPGDL_NODE)
+	
 	# Clean-up of the plugin goes here.
 	if editor_tab:
 		editor_tab.queue_free()

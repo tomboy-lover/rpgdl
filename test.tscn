@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://5cfonekso6uq"]
+
+[ext_resource type="Script" uid="uid://cwivrhsj8ludj" path="res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd" id="1_37kl0"]
+
+[node name="Test" type="Node" unique_id=655269747]
+script = ExtResource("1_37kl0")
+metadata/_custom_type_script = "uid://cwivrhsj8ludj"

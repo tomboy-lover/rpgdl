@@ -14,6 +14,10 @@ config/name="RPGDL"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+RpgdlWorld="*uid://cc14u7n26lsc1"
+
 [display]
 
 window/stretch/mode="canvas_items"
@@ -22,6 +26,13 @@ window/stretch/aspect="expand"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/rpg_dialogue/plugin.cfg")
+
+[input]
+
+sdds={
+"deadzone": 0.2,
+"events": []
+}
 
 [physics]
 

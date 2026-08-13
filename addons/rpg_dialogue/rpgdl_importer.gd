@@ -147,7 +147,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 		
 		_dialogue_regex = RegEx.create_from_string('^(?P<speaker>\\w+)(?:\\s+(?P<emotion>\\w+))?\\s+"(?P<content>.*)"(?:\\s+<(?P<audio>[^>]+)>)?$')
 		#_dialogue_regex = RegEx.create_from_string('^(?P<speaker>\\w+)(?:\\s+(?P<emotion>\\w+))?\\s+"(?P<content>.*)"$')
-		_math_regex = RegEx.create_from_string("^\\s*\\$\\s*(?P<variable>\\w+)\\s*(?P<operator>[\\+\\-\\*\\/]?=)\\s*(?P<expression>.+)$")
+		_math_regex = RegEx.create_from_string("^\\s*\\$\\s*(?P<variable>\\w+)\\s*(?P<operator>[\\+\\-\\*\\/\\%]?=)\\s*(?P<expression>.+)$")
 
 		var lines = raw_text.split("\n")
 		var is_in_block_string: bool = false
@@ -178,15 +178,18 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 		var jump_regex : RegEx = RegEx.create_from_string('^jump\\s+(?P<jump_target>\\w+)$')
 		var emit_regex : RegEx = RegEx.create_from_string('^emit\\s+(?P<signal>\\w+)(?:\\((?P<args>[^\\)]*)\\))?$')
 		var play_regex : RegEx = RegEx.create_from_string('^play\\W+(?P<channel>\\w+)\\W+(?P<filename>\\".+\\")$')
+		var stop_regex : RegEx = RegEx.create_from_string('^stop\\W+(?P<channel>\\w+)$')
 		var set_ui_regex : RegEx = RegEx.create_from_string('^set_ui\\s+(?P<field>\\w+)\\s*=\\s*"(?P<file_path>res:\\/\\/[^"]+\\.\\w+)"$')
 		var scroll_mode_regex : RegEx = RegEx.create_from_string('^scroll_mode\\s+\\"(?P<value>\\w+)\\"$')
 		var page_regex : RegEx = RegEx.create_from_string('^page\\s+"(?P<file_path>res:\\/\\/[^"]+\\.\\w+)"$')
 		var show_panel_regex : RegEx = RegEx.create_from_string('^show_panel\\s+"(?P<panel_name>[^"]+)"$')
+		var delay_regex = RegEx.create_from_string('^delay\\s+(?P<time>[0-9]*\\.?[0-9]+)$')
 		
 		for raw_line in lines:
 			
 			var clean_line : String = _safe_strip(raw_line)
 			if clean_line.is_empty() or clean_line.begins_with("#"):
+				line_number += 1
 				continue #empty line or comment line
 			print(clean_line)
 			var current_indent : int = len(indentation_regex.search(raw_line).get_string("indentation"))
@@ -375,37 +378,73 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				menu_stack.push_front({"indent": indent, "menu_hub": new_menu, "id": current_menu_id})
 				parsed_instructions.append(new_menu)
 				continue
-				
-
 
 			# ---------------------------------------------------
 			# 3. STANDARD PARSING (Single Lines, Commands, etc.)
 			# ---------------------------------------------------
-			
 			if clean_line.begins_with("define "):
 				var result = define_regex.search(clean_line)
 				if result:
 					var var_name = result.get_string("var_name")
 					var def_class = result.get_string("class_name")
 					var def_args = safe_split(result.get_string("args"))
+					
 					match def_class:
+						
 						"Character":
-							if len(def_args) < 2:
-								push_error("not enough arguments for Character - requiers 2")
+							# Only 1 argument (the name) is strictly required now
+							if len(def_args) < 1:
+								push_error(error_prefix + " not enough arguments for Character - requires at least a name")
 							else:
-								var display_name = def_args[0].replace('"', '').strip_edges()
-								var sprites_file: String = def_args[1].replace('"', '').strip_edges()
-								if !sprites_file.begins_with("res://") or !sprites_file.ends_with("res"):
-									print_error(error_prefix + "Character argument %s is not a SpriteFrames Resource" % sprites_file)
-								var char_dict = {
-									"display_name": display_name,
-									"sprites_file": sprites_file
-								}
-								if len(def_args) >= 3:
-									# third arg is custom_key for translation CSV
-									char_dict.set("custom_key", def_args[2].replace('"', '').strip_edges())
+								# 1. Set default fallbacks
+								var display_name = ""
+								var sprites_file = null
+								var show_nametag = true
+								var custom_key = ""
+								# 2. Dynamically loop through the arguments
+								for i in range(def_args.size()):
+									var arg = def_args[i].strip_edges()
+									# Handle Keyword Arguments (Kwargs)
+									if "=" in arg:
+										var kwarg_parts = arg.split("=")
+										var key = kwarg_parts[0].strip_edges().to_lower()
+										var value = kwarg_parts[1].strip_edges().trim_prefix('"').trim_suffix('"')
+										
+										match key:
+											"name":
+												display_name = value
+											"spriteframes":
+												sprites_file = value
+											"show_name", "show_nametag":
+												show_nametag = (value.to_lower() == "true")
+									# Handle Positional Arguments
+									else:
+										var clean_value = arg.trim_prefix('"').trim_suffix('"')
+										match i:
+											0:
+												display_name = clean_value
+											1:
+												sprites_file = clean_value
+											2:
+												custom_key = clean_value
+									# 3. Validation
+									if display_name == "":
+										push_error(error_prefix + " Character requires a name parameter.")
+										
+									# Only validate the sprite file if the writer actually provided one
+									if sprites_file != null and sprites_file != "":
+										if !sprites_file.begins_with("res://") or (!sprites_file.ends_with(".res") and !sprites_file.ends_with(".tres")):
+											print_error(error_prefix + " Character argument %s is not a valid Resource" % sprites_file)
 									
-								parsed_chars.set(var_name, char_dict)
+									# 4. Package and Save
+									var char_dict = {
+										"name": display_name,
+										"spriteframes": sprites_file,
+										"show_nametag": show_nametag
+									}
+										
+									parsed_chars[var_name] = char_dict
+								
 						"Audio":
 							if len(def_args) < 1:
 								print_error(error_prefix + "not enough arguments for Audio - need a directory path for audio files")
@@ -449,6 +488,10 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				var result = play_regex.search(clean_line)
 				parsed_instructions.append({"type": "play", "channel": result.get_string("channel"), "filename": result.get_string("filename")})
 				
+			elif clean_line.begins_with("stop "):
+				var result = stop_regex.search(clean_line)
+				parsed_instructions.append({"type": "stop", "channel": result.get_string("channel")})
+				
 			elif clean_line.begins_with("set_ui "):
 				var result = set_ui_regex.search(clean_line)
 				parsed_instructions.append({"type": "set_ui", "field": result.get_string("field"), "file_path": result.get_string("file_path")})
@@ -464,8 +507,15 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			elif clean_line == "next_panel":
 				parsed_instructions.append({"type": "next_panel"})
 			
+			elif clean_line.begins_with("delay "):
+				var result = page_regex.search(delay_regex)
+				parsed_instructions.append({"type": "delay", "seconds": float( result.get_string("time"))})
+			
 			elif clean_line == "wait":
 				parsed_instructions.append({"type": "wait"})
+				
+			elif clean_line == "end":
+				parsed_instructions.append({"type": "end"})
 			
 			elif clean_line.begins_with("show_panel "):
 				var result = show_panel_regex.search(clean_line)
