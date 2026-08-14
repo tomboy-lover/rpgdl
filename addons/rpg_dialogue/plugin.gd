@@ -43,7 +43,7 @@ func _enter_tree() -> void:
 	# Custom RPGDL Node
 	add_custom_type(RPGDL_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_node.gd"), load("res://icon.svg"))
 	add_custom_type(RPGDL_UI_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd"), load("res://icon.svg"))
-	add_custom_type(RPGDL_BBLR_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_sprite_bubbler.gd"), load("res://icon.svg"))
+	add_custom_type(RPGDL_BBLR_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_speech_bubbler.gd"), load("res://icon.svg"))
 	add_custom_type(RPGDL_POPUP_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_popup.gd"), load("res://icon.svg"))
 	add_custom_type(RPGDL_AUDIO_NODE, "Node", load("res://addons/rpg_dialogue/rpgdl_audio_player.gd"), load("res://icon.svg"))
 	

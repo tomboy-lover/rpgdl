@@ -9,3 +9,9 @@ rpgdl_script = ExtResource("2_l5h3b")
 metadata/_custom_type_script = "uid://cm6oxsm78gb3m"
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=499262805]
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=710737465]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="TextureRect" unique_id=1503072683]

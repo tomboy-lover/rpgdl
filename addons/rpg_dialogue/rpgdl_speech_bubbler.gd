@@ -1,8 +1,8 @@
 extends Node
 
-class_name RpgdlSpriteBubbler
+class_name RpgdlSpeechBubbler
 
-const RPGDL_SPRITE_BBLR_GROUP = "RpgdlSpriteBubbler"
+const RPGDL_SPEECH_BBLR_GROUP = "RpgdlSpeechBubbler"
 
 @export var character : String
 
@@ -13,7 +13,7 @@ const RPGDL_SPRITE_BBLR_GROUP = "RpgdlSpriteBubbler"
 @export var bubble_y_offset : int = 0
 
 func _enter_tree() -> void:
-	add_to_group(RPGDL_SPRITE_BBLR_GROUP)
+	add_to_group(RPGDL_SPEECH_BBLR_GROUP)
 
 func handle_dialogue() -> void:
 	pass

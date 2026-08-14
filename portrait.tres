@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RPGDLPortraitMapResource" format=3 uid="uid://dwe812skodr1w"]
+
+[ext_resource type="Script" uid="uid://cuu8obltdp60v" path="res://addons/rpg_dialogue/portrait_map_resource.gd" id="1_0yb0n"]
+[ext_resource type="Texture2D" uid="uid://cibocgwqwwpw0" path="res://external/bikegol/visual-novel-heroins-pixel-art-portrait-set/hitomi/X6WDRj.png" id="1_rdm3h"]
+[ext_resource type="Texture2D" uid="uid://cqausj2bwfnnq" path="res://external/bikegol/visual-novel-heroins-pixel-art-portrait-set/hitomi/XARkyD.png" id="2_lu24p"]
+
+[resource]
+script = ExtResource("1_0yb0n")
+portraits = Dictionary[String, Texture2D]({
+"x6wdrj": ExtResource("1_rdm3h"),
+"xarkyd": ExtResource("2_lu24p")
+})
+metadata/_custom_type_script = "uid://cuu8obltdp60v"
