@@ -1,13 +1,7 @@
 [gd_resource type="Resource" script_class="RPGDLAudioChannelResource" format=3 uid="uid://bk8pc8torwf8h"]
 
 [ext_resource type="Script" uid="uid://ckhbmfyu4lv0w" path="res://addons/rpg_dialogue/audio_channel_resource.gd" id="1_g5ko2"]
-[ext_resource type="AudioStream" uid="uid://byv40pm6qxsuk" path="res://audio/ogg/JDSherbert - Ultimate UI SFX Pack - Cursor - 1.ogg" id="2_uauhc"]
-[ext_resource type="AudioStream" uid="uid://dn1n4qhecevcc" path="res://audio/ogg/JDSherbert - Ultimate UI SFX Pack - Cursor - 2.ogg" id="3_3gp3i"]
 
 [resource]
 script = ExtResource("1_g5ko2")
-sound_files = Dictionary[String, AudioStream]({
-"bes": ExtResource("3_3gp3i"),
-"ran": ExtResource("2_uauhc")
-})
 metadata/_custom_type_script = "uid://ckhbmfyu4lv0w"

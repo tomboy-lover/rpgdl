@@ -92,7 +92,6 @@ func _parse_dialogue(clean_line: String, err_prefix: String) -> Dictionary:
 		return {}
 	elif clean_line.begins_with("$"):
 		# parse math operation
-		print ("parse\n" + clean_line)
 		var result = _math_regex.search(clean_line)
 		if !result:
 			push_error(err_prefix + "invalid math line")
@@ -177,7 +176,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 		var label_regex : RegEx = RegEx.create_from_string('^label\\s+(?P<label_name>\\w+)\\s*:$')
 		var jump_regex : RegEx = RegEx.create_from_string('^jump\\s+(?P<jump_target>\\w+)$')
 		var emit_regex : RegEx = RegEx.create_from_string('^emit\\s+(?P<signal>\\w+)(?:\\((?P<args>[^\\)]*)\\))?$')
-		var play_regex : RegEx = RegEx.create_from_string('^play\\W+(?P<channel>\\w+)\\W+(?P<filename>\\".+\\")$')
+		var play_regex : RegEx = RegEx.create_from_string('^play\\W+(?P<channel>\\w+)\\W+(?P<sound>.+)$')
 		var stop_regex : RegEx = RegEx.create_from_string('^stop\\W+(?P<channel>\\w+)$')
 		var set_ui_regex : RegEx = RegEx.create_from_string('^set_ui\\s+(?P<field>\\w+)\\s*=\\s*"(?P<file_path>res:\\/\\/[^"]+\\.\\w+)"$')
 		var scroll_mode_regex : RegEx = RegEx.create_from_string('^scroll_mode\\s+\\"(?P<value>\\w+)\\"$')
@@ -191,7 +190,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			if clean_line.is_empty() or clean_line.begins_with("#"):
 				line_number += 1
 				continue #empty line or comment line
-			print(clean_line)
+			#print(clean_line)
 			var current_indent : int = len(indentation_regex.search(raw_line).get_string("indentation"))
 			line_number += 1
 			var error_prefix : String = " %s:%d - " % [source_file, line_number]
@@ -398,9 +397,9 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 							else:
 								# 1. Set default fallbacks
 								var display_name = ""
-								var sprites_file = null
+								var portraits = null
 								var show_nametag = true
-								var custom_key = ""
+								var temp_resource = null
 								# 2. Dynamically loop through the arguments
 								for i in range(def_args.size()):
 									var arg = def_args[i].strip_edges()
@@ -413,8 +412,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 										match key:
 											"name":
 												display_name = value
-											"spriteframes":
-												sprites_file = value
+											"animations", "anim", "textures", "portraits":
+												portraits = value
 											"show_name", "show_nametag":
 												show_nametag = (value.to_lower() == "true")
 									# Handle Positional Arguments
@@ -424,37 +423,74 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 											0:
 												display_name = clean_value
 											1:
-												sprites_file = clean_value
+												portraits = clean_value
 											2:
-												custom_key = clean_value
-									# 3. Validation
-									if display_name == "":
-										push_error(error_prefix + " Character requires a name parameter.")
-										
-									# Only validate the sprite file if the writer actually provided one
-									if sprites_file != null and sprites_file != "":
-										if !sprites_file.begins_with("res://") or (!sprites_file.ends_with(".res") and !sprites_file.ends_with(".tres")):
-											print_error(error_prefix + " Character argument %s is not a valid Resource" % sprites_file)
+												show_nametag = (clean_value.to_lower() == "true")
+								# 3. Validation
+								if display_name == "":
+									push_error(error_prefix + " Character requires a name parameter.")
 									
-									# 4. Package and Save
-									var char_dict = {
-										"name": display_name,
-										"spriteframes": sprites_file,
-										"show_nametag": show_nametag
-									}
-										
-									parsed_chars[var_name] = char_dict
+								# Only validate the sprite file if the writer actually provided one
+								if portraits != null and portraits != "":
+									if !portraits.begins_with("res://") or (!portraits.ends_with(".res") and !portraits.ends_with(".tres")):
+										print_error(error_prefix + " Character argument %s is not a valid Resource" % portraits)
+									elif not ResourceLoader.exists(portraits):
+										print_error(error_prefix + " Resource does not exist at path: %s" % portraits)
+									else:
+										temp_resource = load(portraits)
+										if temp_resource is not SpriteFrames and temp_resource is not RPGDLPortraitMapResource:
+											print_error(error_prefix + " %s is an invalid resource type. must be either SpriteFrames or RPGDLPortraitMapResource" % portraits)
+								
+								# 4. Package and Save
+								var char_dict = {
+									"name": display_name,
+									"animations": portraits if temp_resource is SpriteFrames else null,
+									"textures": portraits if temp_resource is RPGDLPortraitMapResource else null,
+									"show_nametag": show_nametag
+								}
+									
+								parsed_chars[var_name] = char_dict
 								
 						"Audio":
 							if len(def_args) < 1:
-								print_error(error_prefix + "not enough arguments for Audio - need a directory path for audio files")
+								print_error(error_prefix + "not enough arguments for Audio - needs a path for the RPGDLAudioChannelResource")
 							else:
-								var audio_dir: String = def_args[0].replace('"', '').strip_edges()
-								if !audio_dir.begins_with("res://"):
-									print_error(error_prefix + "Audio argument %s needs to be a folder path" % audio_dir)
-								parsed_audio.set(var_name, {"audio_dir": audio_dir})
-						_:
-							print_error(error_prefix + "unrecognized class %s used with define. Use either (Character) or (Audio)" % def_class)
+								var sounds = null
+								var temp_resource = null
+								
+								# 2. Dynamically loop through the arguments
+								for i in range(def_args.size()):
+									var arg = def_args[i].strip_edges()
+									# Handle Keyword Arguments (Kwargs)
+									if "=" in arg:
+										var kwarg_parts = arg.split("=")
+										var key = kwarg_parts[0].strip_edges().to_lower()
+										var value = kwarg_parts[1].strip_edges().trim_prefix('"').trim_suffix('"')
+										
+										match key:
+												"audio", "sounds":
+													sounds = value
+									# Handle Positional Arguments
+									else:
+										var clean_value = arg.trim_prefix('"').trim_suffix('"')
+										match i:
+											0:
+												sounds = clean_value
+								
+								if sounds != null and sounds != "":
+									if !sounds.begins_with("res://") or (!sounds.ends_with(".res") and !sounds.ends_with(".tres")):
+										print_error(error_prefix + " Audio argument %s is not a valid Resource" % sounds)
+									elif not ResourceLoader.exists(sounds):
+										print_error(error_prefix + " Resource does not exist at path: %s" % sounds)
+									else:
+										temp_resource = load(sounds)
+										if temp_resource is not RPGDLAudioChannelResource:
+											print_error(error_prefix + " %s is an invalid resource type. must be RPGDLAudioChannelResource" % sounds)
+											
+								var audio_dict = {
+									"sounds": sounds if temp_resource is RPGDLAudioChannelResource else null
+								}
+								parsed_audio[var_name] = audio_dict
 				
 			elif clean_line.begins_with("import "):
 				var result = import_regex.search(clean_line)
@@ -486,7 +522,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				
 			elif clean_line.begins_with("play "):
 				var result = play_regex.search(clean_line)
-				parsed_instructions.append({"type": "play", "channel": result.get_string("channel"), "filename": result.get_string("filename")})
+				parsed_instructions.append({"type": "play", "channel": result.get_string("channel"), "sound": result.get_string("sound")})
 				
 			elif clean_line.begins_with("stop "):
 				var result = stop_regex.search(clean_line)

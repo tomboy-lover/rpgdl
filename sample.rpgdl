@@ -11,10 +11,10 @@ namespace master_test
 import "res://dialogue/shared_macros.rpgdl"
 
 # 3. Global Definitions (Usually parsed once in a globals.rpgdl file)
-define npc_hero = Character("Hero", "res://art/portraits/hero.tres")
+define npc_hero = Character("Hero", "res://new_sprite_frames.tres")
 define npc_smith = Character("Blacksmith", show_name=false)
-define sfx = Audio("res://audio/sfx")
-define bgm = Audio("res://audio/music")
+define sfx = Audio("res://new_resource.tres")
+define bgm = Audio("res://new_resource.tres")
 
 # 4. Standard Labels (Anchors for jumps)
 label start:
@@ -69,7 +69,7 @@ label search_river:
 
 label leave_shop:
     npc_smith "Then leave me be."
-    play sfx "door_slam"
+    play sfx door_slam
     
 label end_scene:
     # End of script execution test

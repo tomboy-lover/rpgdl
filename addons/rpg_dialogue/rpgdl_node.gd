@@ -36,6 +36,10 @@ var _current_label : String
 
 var _last_processed_line : int  = -1
 
+var _loaded_audio : Dictionary[String, RPGDLAudioChannelResource] = {}
+
+var _loaded_characters : Dictionary[String, Variant] = {}
+
 func _enter_tree() -> void:
 	add_to_group(RPGDL_NODE_GROUP) # for eaiser use with setting the translation
 
@@ -205,9 +209,21 @@ func _process_instruction(line_num: int) -> void:
 			# if speech bubbler for character send direct
 			# else emit to the dialogue ui
 			return # done processing instructions
+			
 		"play":
-			pass
+			if instruction['channel'] not in _loaded_audio.keys():
+				push_error("undefined audio channel %s" % instruction['channel'])
+			elif _loaded_audio.get(instruction['channel'])['sounds'] == null:
+				push_error("audio channel %s is not a valid RPGDLAudioChannelResource")
+			else:
+				var audio_stream = _loaded_audio.get(instruction['channel'])['sounds'].get(instruction['sound'])
+				if audio_stream == null:
+					push_error("sound %s not found in audio channel %s" % [instruction['sound'], instruction['channel']])
+				else:
+					play.emit(instruction['channel'], audio_stream, 0.0)
+				
 			_current_line = line_num + 1
+			
 		"stop":
 			pass
 			_current_line = line_num + 1
