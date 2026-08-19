@@ -176,8 +176,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 		var label_regex : RegEx = RegEx.create_from_string('^label\\s+(?P<label_name>\\w+)\\s*:$')
 		var jump_regex : RegEx = RegEx.create_from_string('^jump\\s+(?P<jump_target>\\w+)$')
 		var emit_regex : RegEx = RegEx.create_from_string('^emit\\s+(?P<signal>\\w+)(?:\\((?P<args>[^\\)]*)\\))?$')
-		var play_regex : RegEx = RegEx.create_from_string('^play\\W+(?P<channel>\\w+)\\W+(?P<sound>.+)$')
-		var stop_regex : RegEx = RegEx.create_from_string('^stop\\W+(?P<channel>\\w+)$')
+		var play_regex : RegEx = RegEx.create_from_string('^play\\W+(?P<channel>\\w+)\\W+(?P<sound>\\w+)(?:\\s+fade\\s+(?P<fade_time>[0-9]*\\.?[0-9]+))?$')
+		var stop_regex : RegEx = RegEx.create_from_string('^stop\\W+(?P<channel>\\w+)(?:\\s+fade\\s+(?P<fade_time>[0-9]*\\.?[0-9]+))?$')
 		var set_ui_regex : RegEx = RegEx.create_from_string('^set_ui\\s+(?P<field>\\w+)\\s*=\\s*"(?P<file_path>res:\\/\\/[^"]+\\.\\w+)"$')
 		var scroll_mode_regex : RegEx = RegEx.create_from_string('^scroll_mode\\s+\\"(?P<value>\\w+)\\"$')
 		var page_regex : RegEx = RegEx.create_from_string('^page\\s+"(?P<file_path>res:\\/\\/[^"]+\\.\\w+)"$')
@@ -297,7 +297,6 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				else:
 					pass # instructions go under current condition branch
 			
-			
 			elif match_if:
 				is_in_condition_block = true
 				var indent = len(match_if.get_string("indentation"))
@@ -313,9 +312,6 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				parsed_instructions.append(if_label)
 				new_condition.get("branches").append({"condition": expression, "target": if_label.get("anchor")})
 				continue
-
-				
-
 
 			var match_menu = menu_regex.search(raw_line)
 			if is_in_menu_block:
@@ -522,11 +518,15 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				
 			elif clean_line.begins_with("play "):
 				var result = play_regex.search(clean_line)
-				parsed_instructions.append({"type": "play", "channel": result.get_string("channel"), "sound": result.get_string("sound")})
+				if result == null:
+					print(clean_line)
+				var fade = result.get_string("fade_time")
+				parsed_instructions.append({"type": "play", "channel": result.get_string("channel"), "sound": result.get_string("sound"), "fade_time": float(fade) if fade != "" else 0.0})
 				
 			elif clean_line.begins_with("stop "):
 				var result = stop_regex.search(clean_line)
-				parsed_instructions.append({"type": "stop", "channel": result.get_string("channel")})
+				var fade = result.get_string("fade_time")
+				parsed_instructions.append({"type": "stop", "channel": result.get_string("channel"), "fade_time": float(fade) if fade != "" else 0.0 })
 				
 			elif clean_line.begins_with("set_ui "):
 				var result = set_ui_regex.search(clean_line)
@@ -552,6 +552,9 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 				
 			elif clean_line == "end":
 				parsed_instructions.append({"type": "end"})
+				
+			elif clean_line == "hide":
+				parsed_instructions.append({"type": "hide"})
 			
 			elif clean_line.begins_with("show_panel "):
 				var result = show_panel_regex.search(clean_line)

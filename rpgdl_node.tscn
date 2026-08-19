@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cm6oxsm78gb3m" path="res://addons/rpg_dialogue/rpgdl_node.gd" id="1_4xalj"]
 [ext_resource type="Resource" uid="uid://bgwhrew60rn50" path="res://sample.rpgdl" id="2_l5h3b"]
+[ext_resource type="Script" uid="uid://b74chkin5xync" path="res://addons/rpg_dialogue/rpgdl_audio_player.gd" id="3_y2mur"]
 
 [node name="RpgdlNode" type="Node" unique_id=1315956539]
 script = ExtResource("1_4xalj")
@@ -15,3 +16,7 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="TextureRect" unique_id=1503072683]
+
+[node name="RpgdlAudioPlayer" type="AudioStreamPlayer" parent="." unique_id=1070851437]
+script = ExtResource("3_y2mur")
+metadata/_custom_type_script = "uid://b74chkin5xync"
