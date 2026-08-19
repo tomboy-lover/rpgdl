@@ -2,6 +2,8 @@ extends Node
 
 class_name RpgdlNode
 
+signal started(node: RpgdlNode)
+
 signal dialogue(speaker: String, text: String, emotion: String, portait_path: String, caller: RpgdlNode)
 
 signal choice(chioces: Array[Dictionary], caller: RpgdlNode)
@@ -11,6 +13,8 @@ signal event(signal_name: String, args : Array[Variant])
 signal play(channel: String, audio_stream: AudioStream, fade_time: float)
 
 signal stop(channel: String, fade_time: float)
+
+signal hide_dialogue
 
 signal dialogue_ended
 
@@ -52,11 +56,18 @@ func _ready() -> void:
 	if auto_attach_ui:
 		var ui : RpgdlDialogueUi = get_tree().get_first_node_in_group(RpgdlDialogueUi.RPGDL_UI_GROUP)
 		
-		#connect(dialogue_ended.get_name(), ui.handle_dialogue_ended)
+		if ui == null:
+			push_error("missing RpgdlDialogueUi in current scene")
+		
 		dialogue_ended.connect(ui.handle_dialogue_ended)
 		dialogue.connect(ui.handle_dialogue)
 		choice.connect(ui.handle_choice)
+	
+	if auto_attach_audio:
+		for audio_player : RpgdlAudioPlayer in get_tree().get_nodes_in_group(RpgdlAudioPlayer.RPGDL_AUDIO_PLAYER_GROUP):
 		
+			play.connect(audio_player.handle_play_audio)
+			stop.connect(audio_player.handle_stop_audio)
 
 func translate_instruction(line_num: int, current_label: String, instruction: Dictionary) -> Dictionary:
 	var trans_inst = instruction
@@ -189,6 +200,9 @@ func _process_instruction(line_num: int) -> void:
 	if line_num == _last_processed_line:
 		push_error("infinite loop encountered line " + str(line_num))
 		return
+	if line_num >= len(rpgdl_script.instructions):
+		dialogue_ended.emit()
+		return
 	_last_processed_line = line_num
 	var instruction : Dictionary = rpgdl_script.instructions[line_num]
 	instruction = translate_instruction(line_num, _current_label, instruction)
@@ -197,11 +211,14 @@ func _process_instruction(line_num: int) -> void:
 		"label":
 			_current_label = instruction["anchor"]
 			_current_line = line_num + 1
+			
 		"jump":
 			_current_line = rpgdl_script.bookmarks.get(instruction["target"])
+			
 		"math":
 			_math_operation(instruction['variable'], instruction['op'], instruction['expression'])
 			_current_line = line_num + 1
+			
 		"dialogue":
 			_current_state = _NODE_STATES.AWAIT_DIALOGUE
 			# get character
@@ -220,13 +237,17 @@ func _process_instruction(line_num: int) -> void:
 				if audio_stream == null:
 					push_error("sound %s not found in audio channel %s" % [instruction['sound'], instruction['channel']])
 				else:
-					play.emit(instruction['channel'], audio_stream, 0.0)
+					play.emit(instruction['channel'], audio_stream, instruction['fade_time'])
 				
 			_current_line = line_num + 1
 			
 		"stop":
-			pass
+			if instruction['channel'] not in _loaded_audio.keys():
+				push_error("undefined audio channel %s" % instruction['channel'])
+			else:
+				stop.emit(instruction['channel'], instruction['fade_time'])
 			_current_line = line_num + 1
+			
 		"condition_hub":
 			var branch_list = instruction['branches']
 			_current_line = line_num + 1 # emergency exit to prevent infinite loop
@@ -256,24 +277,32 @@ func _process_instruction(line_num: int) -> void:
 			
 		"set_ui":
 			pass
+			
 		"scroll_mode":
 			pass
+			
 		"page":
 			pass
+			
 		"next_panel":
 			pass
+			
 		"show_panel":
 			pass
+			
 		"wait":
 			return
+			
 		"delay":
 			pass
+			
 		"end":
 			dialogue_ended.emit()
 			return
 		
 		_: # wildcard
 			_current_line = line_num + 1
+			
 	_process_instruction(_current_line)
 	
 	

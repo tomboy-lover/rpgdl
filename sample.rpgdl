@@ -20,7 +20,7 @@ define bgm = Audio("res://new_resource.tres")
 label start:
     
     # 5. Standalone Audio Commands (Sequential audio execution)
-    play bgm "town_theme"
+    play bgm town_theme
 
     # 6. Basic Dialogue with Inline Voice Tag and Manual Translation Key Override
     npc_smith "Where is my hammer?!" <voice: angry_grunt> #SMITH_001
@@ -41,7 +41,7 @@ label start:
 			# test
             $ karma += 1
             $ accepted_quest = true
-            play sfx "quest_accept"
+            play sfx quest_accept
             
             # 12. Jump Command
             jump search_river
@@ -69,7 +69,8 @@ label search_river:
 
 label leave_shop:
     npc_smith "Then leave me be."
-    play sfx door_slam
+    play sfx door_slam fade 1.0
+	stop sfx fade 0.5
     
 label end_scene:
     # End of script execution test
