@@ -2,9 +2,9 @@ extends Node
 
 class_name RpgdlNode
 
-signal started(node: RpgdlNode)
+signal dialogue_started(node: RpgdlNode)
 
-signal dialogue(speaker: String, text: String, emotion: String, portait_path: String, caller: RpgdlNode)
+signal dialogue(speaker: String, text: String, emotion: String, portrait_res: RPGDLPortraitMapResource, anim_res: SpriteFrames, caller: RpgdlNode)
 
 signal choice(chioces: Array[Dictionary], caller: RpgdlNode)
 
@@ -62,6 +62,8 @@ func _ready() -> void:
 		dialogue_ended.connect(ui.handle_dialogue_ended)
 		dialogue.connect(ui.handle_dialogue)
 		choice.connect(ui.handle_choice)
+		hide_dialogue.connect(ui.handle_hide_dialogue)
+		dialogue_started.connect(ui.handle_dialogue_started)
 	
 	if auto_attach_audio:
 		for audio_player : RpgdlAudioPlayer in get_tree().get_nodes_in_group(RpgdlAudioPlayer.RPGDL_AUDIO_PLAYER_GROUP):
@@ -222,16 +224,47 @@ func _process_instruction(line_num: int) -> void:
 		"dialogue":
 			_current_state = _NODE_STATES.AWAIT_DIALOGUE
 			# get character
+			var speaker_id: String = instruction['speaker']
+			var speaker_char: Dictionary = _loaded_characters.get(speaker_id)
+			if speaker_char == null:
+				push_error("undefined character: %s" % speaker_id)
+			var speaker_tr_key = str("CHAR_" + speaker_id).to_upper()
+			var speaker_name: String = speaker_char['name'] if speaker_tr_key == tr(speaker_tr_key) else tr(speaker_tr_key)
 			# interpolate values in text content
 			# if speech bubbler for character send direct
 			# else emit to the dialogue ui
+			dialogue.emit(
+				speaker_name if speaker_char['show_nametag'] else "",
+				_interpolate_string(instruction['content']),
+				instruction['emotion'],
+				speaker_char['textures'],
+				speaker_char['animations'],
+				self
+			)
+			if instruction['audio']:
+				var d_audio: Array[String] = str(instruction['audio']).split(":")
+				if len(d_audio) >= 2:
+					var a_channel: String = d_audio[0].strip_edges()
+					var a_sound: String = d_audio[1].strip_edges()
+					if a_channel not in _loaded_audio.keys():
+						push_error("undefined audio channel %s" % a_channel)
+					elif _loaded_audio.get(a_channel)['sounds'] == null:
+						push_error("audio channel %s is not a valid RPGDLAudioChannelResource" % a_channel)
+					else:
+						var audio_stream = _loaded_audio.get(a_channel)['sounds'].get(a_sound)
+						if audio_stream == null:
+							push_error("sound %s not found in audio channel %s" % [a_sound, a_channel])
+						else:
+							play.emit(a_channel, audio_stream, 0.0)
+			else:
+				push_error("invalid dialogue audio: %s" % instruction['audio'])
 			return # done processing instructions
 			
 		"play":
 			if instruction['channel'] not in _loaded_audio.keys():
 				push_error("undefined audio channel %s" % instruction['channel'])
 			elif _loaded_audio.get(instruction['channel'])['sounds'] == null:
-				push_error("audio channel %s is not a valid RPGDLAudioChannelResource")
+				push_error("audio channel %s is not a valid RPGDLAudioChannelResource" % instruction['channel'])
 			else:
 				var audio_stream = _loaded_audio.get(instruction['channel'])['sounds'].get(instruction['sound'])
 				if audio_stream == null:

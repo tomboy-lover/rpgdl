@@ -144,7 +144,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 		var line_number : int = 0
 		var indentation_regex : RegEx = RegEx.create_from_string('^(?P<indentation>\\s*).*$')
 		
-		_dialogue_regex = RegEx.create_from_string('^(?P<speaker>\\w+)(?:\\s+(?P<emotion>\\w+))?\\s+"(?P<content>.*)"(?:\\s+<(?P<audio>[^>]+)>)?$')
+		_dialogue_regex = RegEx.create_from_string('^(?P<speaker>\\w+)(?:\\s+(?P<emotion>[\\w\\>]+))?\\s+"(?P<content>.*)"(?:\\s+<(?P<audio>[^>]+)>)?$')
 		#_dialogue_regex = RegEx.create_from_string('^(?P<speaker>\\w+)(?:\\s+(?P<emotion>\\w+))?\\s+"(?P<content>.*)"$')
 		_math_regex = RegEx.create_from_string("^\\s*\\$\\s*(?P<variable>\\w+)\\s*(?P<operator>[\\+\\-\\*\\/\\%]?=)\\s*(?P<expression>.+)$")
 
