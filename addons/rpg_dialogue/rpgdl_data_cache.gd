@@ -1,8 +1,7 @@
 extends Node
 
-class_name RpgdlSignalBus
+class_name RpgdlDataCache
 
-signal rpgdl_event(event_name: String, args: Array[Variant])
 
 var world_state : Dictionary = {}
 
@@ -12,6 +11,3 @@ func _get(property: StringName) -> Variant:
 	if world_state.has(property):
 		return world_state[property]
 	return null
-
-func publish_signal(signal_name: String, args: Array[Variant]) -> void:
-	rpgdl_event.emit(signal_name, args)
