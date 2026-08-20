@@ -48,10 +48,10 @@ func _enter_tree() -> void:
 	add_to_group(RPGDL_NODE_GROUP) # for eaiser use with setting the translation
 
 func _ready() -> void:
-	if RpgdlWorld:
+	if SignalBus:
 		#world_data = RpgdlWorld.world_state
 		#connect(event.get_name(), RpgdlWorld.publish_signal)
-		event.connect(RpgdlWorld.publish_signal)
+		event.connect(SignalBus.publish_signal)
 	
 	if auto_attach_ui:
 		var ui : RpgdlDialogueUi = get_tree().get_first_node_in_group(RpgdlDialogueUi.RPGDL_UI_GROUP)
@@ -112,6 +112,7 @@ func start_script(start_label : String = "start") -> void:
 	
 	_current_line = rpgdl_script.bookmarks.get(start_label)
 	_current_state = _NODE_STATES.BUSY
+	dialogue_started.emit(self)
 	_process_instruction(_current_line)
  
 func make_chioce(choice : int) -> void:
@@ -126,7 +127,7 @@ func make_chioce(choice : int) -> void:
 	_process_instruction(_current_line)
 
 func _interpolate_string(raw_string: String) -> String:
-	return raw_string.format(RpgdlWorld.world_state)
+	return raw_string.format(RpgdlData.world_state)
 
 func _eval_expression(expr: String) -> Variant:
 	var clean_expr = ""
@@ -163,7 +164,7 @@ func _eval_expression(expr: String) -> Variant:
 	if expression.parse(clean_expr) != OK:
 		push_error("invalid expression")
 		return null
-	var result = expression.execute([], RpgdlWorld) 
+	var result = expression.execute([], RpgdlData) 
 	
 	if not expression.has_execute_failed():
 		return result
@@ -175,20 +176,20 @@ func _math_operation(variable: String, op: String, expr: String) -> void:
 	var value : Variant = _eval_expression(expr)
 	
 	if op == "=":
-		RpgdlWorld.world_state[variable] = value
+		RpgdlData.world_state[variable] = value
 		return
 	
 	match op:
 		"+=":
-			RpgdlWorld.world_state[variable] += value
+			RpgdlData.world_state[variable] += value
 		"-=":
-			RpgdlWorld.world_state[variable] -= value
+			RpgdlData.world_state[variable] -= value
 		"*=":
-			RpgdlWorld.world_state[variable] *= value
+			RpgdlData.world_state[variable] *= value
 		"/=":
-			RpgdlWorld.world_state[variable] /= value
+			RpgdlData.world_state[variable] /= value
 		"%=":
-			RpgdlWorld.world_state[variable] %= value
+			RpgdlData.world_state[variable] %= value
 		_:
 			push_error("invalid math operator")
 

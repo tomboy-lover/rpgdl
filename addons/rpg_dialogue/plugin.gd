@@ -5,12 +5,13 @@ var import_plugin
 var editor_tab : Control
 const PLUGIN_NAME = "RpgDL"
 
+const SIGNAL_BUS = "SignalBus"
 const RPGDL_NODE = "RpgdlNode"
 const RPGDL_UI_NODE = "RpgdlUi"
 const RPGDL_AUDIO_NODE = "RpgdlAudioPlayer"
 const RPGDL_BBLR_NODE = "RpgdlSpeechBubbler"
 const RPGDL_POPUP_NODE = "RpgdlPopup"
-const AUTO_LD_NAME = "RpgdlWorld"
+const AUTO_LD_NAME = "RpgdlData"
 
 func _enable_plugin() -> void:
 	# Add autoloads here.
@@ -27,7 +28,8 @@ func _enter_tree() -> void:
 	load("res://addons/rpg_dialogue/rpgdl_resource.gd")
 	load("res://addons/rpg_dialogue/audio_channel_resource.gd")
 	
-	add_autoload_singleton(AUTO_LD_NAME, "res://addons/rpg_dialogue/rpgdl_signalbus.gd")
+	add_autoload_singleton(AUTO_LD_NAME, "res://addons/rpg_dialogue/rpgdl_data_cache.gd")
+	add_autoload_singleton(SIGNAL_BUS, "res://addons/rpg_dialogue/signal_bus.gd")
 	
 	# .rpgdl file importer
 	import_plugin = load("res://addons/rpg_dialogue/rpgdl_importer.gd").new()
@@ -52,6 +54,7 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	
 	remove_autoload_singleton(AUTO_LD_NAME)
+	remove_autoload_singleton(SIGNAL_BUS)
 	
 	# custom RPGDL Nodes
 	remove_custom_type(RPGDL_UI_NODE)

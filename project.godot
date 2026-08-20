@@ -16,7 +16,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-RpgdlWorld="*uid://cc14u7n26lsc1"
+RpgdlData="*uid://cc14u7n26lsc1"
+SignalBus="*uid://ue3r0o31xoxg"
 
 [display]
 
