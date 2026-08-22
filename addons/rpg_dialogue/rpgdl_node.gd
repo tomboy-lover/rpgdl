@@ -18,7 +18,10 @@ signal hide_dialogue
 
 signal dialogue_ended
 
-@export var rpgdl_script : RPGDLResource = null
+@export var rpgdl_script : RPGDLResource = null:
+	set(value):
+		rpgdl_script = value
+		_load_rpgdl_file()
 
 @export var auto_attach_ui : bool = true
 
@@ -70,6 +73,41 @@ func _ready() -> void:
 		
 			play.connect(audio_player.handle_play_audio)
 			stop.connect(audio_player.handle_stop_audio)
+	
+	if rpgdl_script:
+		_load_rpgdl_file()
+
+func _load_rpgdl_file() -> void:
+	var loaded_namespaces = [rpgdl_script.name_space]
+	
+	var tmp_loaded_chars = {}
+	var tmp_loaded_audios = {}
+	
+	var get_imports_lambda : Callable = func(path: String, lambda: Callable):
+		if path.get_extension() != "rpgdl":
+			push_error("invalid import file: %s" % path)
+			return
+		elif not ResourceLoader.exists(path):
+			push_error("import file missing: %s" % path)
+			return
+		var rpgdl : RPGDLResource = load(path)
+		if rpgdl.name_space not in loaded_namespaces:
+			loaded_namespaces.append(rpgdl.name_space)
+			tmp_loaded_audios.merge(rpgdl.audio_channels)
+			tmp_loaded_chars.merge(rpgdl.characters)
+			var next_imports = rpgdl.imports
+			rpgdl = null
+			for imp_paths in next_imports:
+				lambda.call(imp_paths, lambda)
+	
+	for imp_paths in rpgdl_script.imports:
+		get_imports_lambda.call(imp_paths, get_imports_lambda)
+	
+	tmp_loaded_audios.merge(rpgdl_script.audio_channels, true)
+	tmp_loaded_chars.merge(rpgdl_script.characters, true)
+	
+	_loaded_audio = tmp_loaded_audios
+	_loaded_characters = tmp_loaded_chars
 
 func translate_instruction(line_num: int, current_label: String, instruction: Dictionary) -> Dictionary:
 	var trans_inst = instruction
@@ -105,10 +143,7 @@ func start_script(start_label : String = "start") -> void:
 	if _current_state != _NODE_STATES.READY:
 		push_error("rpgdl_script already started")
 	
-	if rpgdl_script.name_space == null or rpgdl_script.name_space == '':
-		_current_namespace = rpgdl_script.resource_path.get_file().get_basename()
-	else:
-		_current_namespace = rpgdl_script.name_space
+	_current_namespace = rpgdl_script.name_space
 	
 	_current_line = rpgdl_script.bookmarks.get(start_label)
 	_current_state = _NODE_STATES.BUSY
