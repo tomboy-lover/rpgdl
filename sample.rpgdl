@@ -4,6 +4,7 @@
 # Use this to test your RegEx loops, flattening logic, and extraction.
 # ---------------------------------------------------------
 
+
 # 1. Namespace Override (Forces CSV keys to use this prefix instead of filename)
 namespace master_test
 
@@ -18,60 +19,67 @@ define bgm = Audio("res://new_resource.tres")
 
 # 4. Standard Labels (Anchors for jumps)
 label start:
-    
-    # 5. Standalone Audio Commands (Sequential audio execution)
-    play bgm town_theme
+	
+	# 5. Standalone Audio Commands (Sequential audio execution)
+	play bgm town_theme
 
-    # 6. Basic Dialogue with Inline Voice Tag and Manual Translation Key Override
-    npc_smith "Where is my hammer?!" <voice: angry_grunt> #SMITH_001
+	# 6. Basic Dialogue with Inline Voice Tag and Manual Translation Key Override
+	npc_smith "Where is my hammer?!" <voice: angry_grunt> #SMITH_001
 
-    # 7. Full Dialogue with Portrait Emotion and BBCode Text Effects
-    npc_hero surprised "I thought you left it by the [wave amp=50 freq=2]river[/wave]?"
-    
-    # 8. Dialogue with Dynamic Text Variables (String formatting)
-    npc_smith angry "No, {player_name}, I left it right here!"
-    
-    # 9. Emitting Godot Signals (Event Bus Triggers with arguments)
-    emit start_quest("find_hammer", 100)
-    
-    # 10. Multi-line Block: Menus & Choices
-    menu:
-        "I will help you find it.":
-            # 11. Setting Logic Variables (Math & Game State)
+	# 7. Full Dialogue with Portrait Emotion and BBCode Text Effects
+	npc_hero surprised "I thought you left it by the [wave amp=50 freq=2]river[/wave]?"
+	
+	# 8. Dialogue with Dynamic Text Variables (String formatting)
+	npc_smith angry "No, {player_name}, I left it #1 right here!" #test
+	
+	
+	npc_smith angry """This is the last
+	Time that i let you do this {quest_line_01} #1
+	""" <voice: angry_grunt>
+	
+	# 9. Emitting Godot Signals (Event Bus Triggers with arguments)
+	emit start_quest("find_hammer", 10.0)
+	
+	# 10. Multi-line Block: Menus & Choices
+	menu:
+		"I will help you find it.":
+			# 11. Setting Logic Variables (Math & Game State)
 			# test
-            $ karma += 1
-            $ accepted_quest = true
-            play sfx quest_accept
-            
-            # 12. Jump Command
-            jump search_river
-            
-        "I don't have time for this.":
-            $ karma -= 1
-            
-            # Nested dialogue inside a menu choice (Requires parser flattening)
-            npc_hero sad "Sorry, I am too busy."
-            jump leave_shop
+			$ karma += 1.0
+			$accepted_quest = true
+			$test = "sdfdf"
+			play sfx quest_accept
+			
+			# 12. Jump Command
+			jump search_river
+			
+		"I don't have time for this." if karma > salty else "lacking karma":
+			$ karma -= 1
+			
+			# Nested dialogue inside a menu choice (Requires parser flattening)
+			npc_hero sad "Sorry, I am too busy."
+			jump leave_shop
 
 label search_river:
-    
-    # 13. Multi-line Block: If / Elif / Else Conditions (Chain of evaluations)
-    if karma > 10:
-        npc_smith happy "You have always been a good friend."
-        $ gold += 50
-    elif karma == 10:
-        npc_smith neutral "Thank you. Please hurry."
-    else:
-        npc_smith angry "Just don't steal anything while you're at it!"
-        emit decrease_reputation()
+	
+	# 13. Multi-line Block: If / Elif / Else Conditions (Chain of evaluations)
+	if karma > 10 or karma == 5 and karma != null:
+		npc_smith happy "You have always been a good friend."
+		$ gold = gold + 50
+	elif karma == 10:
+		npc_smith neutral>happy "Thank you. Please hurry."
+	else:
+		npc_smith angry "Just don't steal anything while you're at it!"
+		emit decrease_reputation("village_01", karma, null)
 
-    jump end_scene
+	jump end_scene
 
 label leave_shop:
-    npc_smith "Then leave me be."
-    play sfx door_slam fade 1.0
+	npc_smith "Then leave me be."
+	play sfx door_slam fade 1.0
 	stop sfx fade 0.5
-    
+	end
+	
 label end_scene:
-    # End of script execution test
-    emit fade_out_screen()
+	# End of script execution test
+	emit fade_out_screen()

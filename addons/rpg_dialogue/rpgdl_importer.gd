@@ -249,8 +249,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			if is_in_condition_block:
 				var indent_match = indentation_regex.search(raw_line)
 				var cur_indent = len(indent_match.get_string("indentation"))
-				if cur_indent % 4 != 0:
-					print_error(error_prefix + "mismatch if block indentation")
+				#if cur_indent % 4 != 0:
+					#print_error(error_prefix + "mismatch if block indentation")
 				
 				var elif_match = elif_regex.search(raw_line)
 				var else_match = else_regex.search(raw_line)
@@ -300,8 +300,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			elif match_if:
 				is_in_condition_block = true
 				var indent = len(match_if.get_string("indentation"))
-				if indent % 4 != 0:
-					print_error(error_prefix + "mismatch if block indentation")
+				#if indent % 4 != 0:
+					#print_error(error_prefix + "mismatch if block indentation")
 					
 				var new_condition = {"type": "condition_hub", "branches": []}
 				var expression = match_if.get_string("condition")
@@ -317,8 +317,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			if is_in_menu_block:
 				var indent_match = indentation_regex.search(raw_line)
 				var cur_indent = len(indent_match.get_string("indentation"))
-				if cur_indent % 4 != 0:
-					print_error(error_prefix + "mismatch menu indentation")
+				#if cur_indent % 4 != 0:
+					#print_error(error_prefix + "mismatch menu indentation")
 				
 				var match_option = menu_option_regex.search(raw_line)
 				var current_menu = menu_stack.get(0) # stack current menu is always the first element
@@ -365,8 +365,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 			elif match_menu:
 				is_in_menu_block = true
 				var indent = len(match_menu.get_string("indentation"))
-				if indent % 4 != 0:
-					print_error(error_prefix + "mismatch menu indentation")
+				#if indent % 4 != 0:
+					#print_error(error_prefix + "mismatch menu indentation")
 					
 				var new_menu = {"type": "menu_hub", "choices": []}
 				current_menu_id += 1

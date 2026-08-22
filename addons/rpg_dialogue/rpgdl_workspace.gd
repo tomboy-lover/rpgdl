@@ -114,6 +114,7 @@ func _on_open_file_selected(path: String) -> void:
 
 
 func save_current_file() -> void:
+	editor.convert_indent()
 	if current_file_path == "":
 		save_dialog.popup_centered_ratio(0.5)
 		return
