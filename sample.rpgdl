@@ -6,7 +6,7 @@
 
 
 # 1. Namespace Override (Forces CSV keys to use this prefix instead of filename)
-namespace master_test
+# namespace master_test
 
 # 2. Imports (Linking shared macros or labels without copy-pasting)
 import "res://dialogue/shared_macros.rpgdl"
@@ -70,7 +70,7 @@ label search_river:
 		npc_smith neutral>happy "Thank you. Please hurry."
 	else:
 		npc_smith angry "Just don't steal anything while you're at it!"
-		emit decrease_reputation("village_01", karma, null)
+		emit decrease_reputation("village_01", karma, null, 8.0)
 
 	jump end_scene
 
@@ -83,3 +83,4 @@ label leave_shop:
 label end_scene:
 	# End of script execution test
 	emit fade_out_screen()
+	end

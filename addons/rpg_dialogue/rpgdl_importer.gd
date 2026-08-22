@@ -588,6 +588,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 	var filename = save_path + "." + _get_save_extension()
 	if !parsed_namespace.is_empty():
 		parsed_resource.name_space = parsed_namespace
+	else:
+		parsed_resource.name_space = save_path.get_file().get_basename()
 	parsed_resource.bookmarks = parsed_bookmarks
 	parsed_resource.instructions = parsed_instructions
 	parsed_resource.imports = parsed_imports
