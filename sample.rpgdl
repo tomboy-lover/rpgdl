@@ -38,7 +38,7 @@ label start:
 	""" <voice: angry_grunt>
 	
 	# 9. Emitting Godot Signals (Event Bus Triggers with arguments)
-	emit start_quest("find_hammer", 100)
+	emit start_quest("find_hammer", 10.0)
 	
 	# 10. Multi-line Block: Menus & Choices
 	menu:
@@ -53,7 +53,7 @@ label start:
 			# 12. Jump Command
 			jump search_river
 			
-		"I don't have time for this.":
+		"I don't have time for this." if karma > salty else "lacking karma":
 			$ karma -= 1
 			
 			# Nested dialogue inside a menu choice (Requires parser flattening)
@@ -63,14 +63,14 @@ label start:
 label search_river:
 	
 	# 13. Multi-line Block: If / Elif / Else Conditions (Chain of evaluations)
-	if karma > 10:
+	if karma > 10 or karma == 5 and karma != null:
 		npc_smith happy "You have always been a good friend."
 		$ gold = gold + 50
 	elif karma == 10:
-		npc_smith neutral "Thank you. Please hurry."
+		npc_smith neutral>happy "Thank you. Please hurry."
 	else:
 		npc_smith angry "Just don't steal anything while you're at it!"
-		emit decrease_reputation()
+		emit decrease_reputation("village_01", karma, null)
 
 	jump end_scene
 
@@ -78,6 +78,7 @@ label leave_shop:
 	npc_smith "Then leave me be."
 	play sfx door_slam fade 1.0
 	stop sfx fade 0.5
+	end
 	
 label end_scene:
 	# End of script execution test

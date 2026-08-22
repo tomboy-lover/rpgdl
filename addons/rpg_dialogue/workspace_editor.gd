@@ -12,8 +12,11 @@ const VARIABLE_COLOR     = Color("#ffb380")
 const SYMBOL_COLOR       = Color("#abc9e9")
 const DEFAULT_COLOR      = Color("#e0e0e0")
 
-const KEYWORDS = ["namespace", "import", "define", "label", "play", "stop", "emit", "true", "false"]
+const KEYWORDS = ["namespace", "import", "define", "label", "play", "stop", "emit", "true", "false", "null", "not", "and", "or"]
 const FLOW_WORDS = ["menu", "jump", "if", "elif", "else", "end"]
+const FUNC_WORDS = ["fade"]
+const CONDITON_WORDS = ["if", "elif"]
+const FOLLOW_WORDS = ["jump", "play", "stop"]
 
 func _ready() -> void:
 	self.syntax_highlighter = RpgdlHighlighter.new()
@@ -30,12 +33,14 @@ class RpgdlHighlighter extends CodeHighlighter:
 	
 	var string_var_regex = RegEx.new()
 	var bbcode_regex = RegEx.new()
+	var tag_regex = RegEx.new()
 	
 	var line_states: Dictionary = {}
 
 	func _init() -> void:
 		string_var_regex.compile("\\{[^\\}]+\\}")
 		bbcode_regex.compile("\\[[^\\]]+\\]")
+		tag_regex.compile("<([a-zA-Z_]\\w*):?\\s*([^>]*)>")
 
 	func _get_line_syntax_highlighting(line: int) -> Dictionary:
 		var color_map = {}
@@ -56,6 +61,8 @@ class RpgdlHighlighter extends CodeHighlighter:
 		var line_length = text.length()
 		
 		var last_keyword_seen = ""
+		var in_inline_condition = false
+		var emit_paren_depth = 0
 		
 		# --- INITIAL LINE STRUCTURE SCAN ---
 		var line_stripped = text.strip_edges(true, false)
@@ -77,7 +84,7 @@ class RpgdlHighlighter extends CodeHighlighter:
 			if first_word in KEYWORDS or first_word in FLOW_WORDS:
 				starts_with_special = true
 		
-		# CRITICAL CONDITIONALS CHECK: Flag if this line evaluates logical flow parameters
+		# Block condition check
 		var is_conditional_line = first_word in ["if", "elif"]
 		var dynamic_first_word_handled = starts_with_special
 
@@ -85,7 +92,7 @@ class RpgdlHighlighter extends CodeHighlighter:
 		while current_idx < line_length:
 			var remaining_text = text.substr(current_idx)
 			
-			# 1. CRITICAL MULTI-LINE CHECK: Handle if we are inside a multi-line string block
+			# 1. CRITICAL MULTI-LINE CHECK: Multi-line string block
 			if current_state == STATE_TRIPLE_QUOTE:
 				color_map[current_idx] = {"color": STRING_COLOR}
 				var end_triple_idx = text.find("\"\"\"", current_idx)
@@ -126,6 +133,7 @@ class RpgdlHighlighter extends CodeHighlighter:
 
 			# 4. Check for Single-Line Quotes
 			elif remaining_text.begins_with("\""):
+				in_inline_condition = false
 				color_map[current_idx] = {"color": STRING_COLOR}
 				var close_single = text.find("\"", current_idx + 1)
 				if close_single != -1:
@@ -137,7 +145,15 @@ class RpgdlHighlighter extends CodeHighlighter:
 					current_idx += 1
 				continue
 
-			# 5. Check for Word Tokens (Keywords, Flow, Functions, Variables)
+			# 5. Check for Inline Audio / Metadata Tags: <voice: ...>, <sfx: ...>
+			elif remaining_text.begins_with("<"):
+				var close_angle = text.find(">", current_idx)
+				if close_angle != -1:
+					_highlight_inline_tags(text, current_idx, close_angle + 1, color_map, default_text_color)
+					current_idx = close_angle + 1
+					continue
+
+			# 6. Check for Word Tokens (Keywords, Flow, Functions, Variables)
 			var first_char = text[current_idx]
 			if (first_char >= "a" and first_char <= "z") or (first_char >= "A" and first_char <= "Z") or first_char == "_":
 				var word_length = 0
@@ -150,30 +166,34 @@ class RpgdlHighlighter extends CodeHighlighter:
 						
 				var word_str = remaining_text.substr(0, word_length)
 				
-				# Highlight validation matching
+				# Highlight matching
 				if word_str in KEYWORDS:
 					color_map[current_idx] = {"color": KEYWORD_COLOR}
 					color_map[current_idx + word_length] = {"color": default_text_color}
-					last_keyword_seen = word_str 
-				elif word_str in ["menu", "jump", "if", "elif", "else", "end", "true", "false"]:
+					last_keyword_seen = word_str
+				elif word_str in FLOW_WORDS:
 					color_map[current_idx] = {"color": FLOW_COLOR}
 					color_map[current_idx + word_length] = {"color": default_text_color}
-					last_keyword_seen = word_str 
-				elif word_str == "fade":
+					last_keyword_seen = word_str
+					if word_str in ["if", "elif"]:
+						in_inline_condition = true
+					elif word_str == "else":
+						in_inline_condition = false
+				elif word_str in FUNC_WORDS:
 					color_map[current_idx] = {"color": FUNCTION_COLOR}
 					color_map[current_idx + word_length] = {"color": default_text_color}
 				else:
-					# FIXED VARIABLE SELECTION LAYER
-					# Persistent math line processing or active flow evaluation lines match peach
-					if is_math_line or is_conditional_line:
+					# VARIABLE SELECTION LAYER
+					if is_math_line or is_conditional_line or in_inline_condition or (last_keyword_seen == "emit" and emit_paren_depth > 0):
 						color_map[current_idx] = {"color": VARIABLE_COLOR}
 						color_map[current_idx + word_length] = {"color": default_text_color}
-					# If this is the absolute first identifier on an ordinary plain line, color it SYMBOL_COLOR
+					elif last_keyword_seen == "emit":
+						color_map[current_idx] = {"color": FUNCTION_COLOR}
+						color_map[current_idx + word_length] = {"color": default_text_color}
 					elif not dynamic_first_word_handled:
 						color_map[current_idx] = {"color": SYMBOL_COLOR}
 						color_map[current_idx + word_length] = {"color": default_text_color}
-					# Lookbehind parameter target logic configuration
-					elif last_keyword_seen in ["jump", "play", "stop"]:
+					elif last_keyword_seen in FOLLOW_WORDS:
 						color_map[current_idx] = {"color": SYMBOL_COLOR}
 						color_map[current_idx + word_length] = {"color": default_text_color}
 						last_keyword_seen = ""
@@ -189,32 +209,86 @@ class RpgdlHighlighter extends CodeHighlighter:
 				current_idx += word_length
 				continue
 
-			# 6. Check for Numeric Digits
-			elif first_char >= "0" and first_char <= "9":
+			# 7. Check for Numeric Digits and Floats (e.g., 50, 50.0, .5)
+			var is_digit = first_char >= "0" and first_char <= "9"
+			var is_leading_dot_float = first_char == "." and current_idx + 1 < line_length and text[current_idx + 1] >= "0" and text[current_idx + 1] <= "9"
+			
+			if is_digit or is_leading_dot_float:
 				var num_length = 0
-				while current_idx + num_length < line_length and text[current_idx + num_length] >= "0" and text[current_idx + num_length] <= "9":
-					num_length += 1
+				var has_decimal = false
+				
+				while current_idx + num_length < line_length:
+					var c = text[current_idx + num_length]
+					if c >= "0" and c <= "9":
+						num_length += 1
+					elif c == "." and not has_decimal:
+						if (num_length > 0) or (current_idx + num_length + 1 < line_length and text[current_idx + num_length + 1] >= "0" and text[current_idx + num_length + 1] <= "9"):
+							has_decimal = true
+							num_length += 1
+						else:
+							break
+					else:
+						break
+				
 				color_map[current_idx] = {"color": NUMBER_COLOR}
 				color_map[current_idx + num_length] = {"color": default_text_color}
 				current_idx += num_length
 				continue
 
-			# 7. Check for Mathematical Operators & Symbols
-			elif first_char in ["$", "-", "+", "*", "/", "%", "=", "<", ">", "!", ":", ",", "."]:
+			# 8. Check for Mathematical Operators, Parentheses & Symbols
+			elif first_char in ["$", "-", "+", "*", "/", "%", "=", "<", ">", "!", ":", ",", ".", "(", ")"]:
+				if first_char == ":":
+					in_inline_condition = false
+				elif first_char == "(":
+					if last_keyword_seen == "emit":
+						emit_paren_depth += 1
+				elif first_char == ")":
+					if last_keyword_seen == "emit":
+						emit_paren_depth = max(0, emit_paren_depth - 1)
+						if emit_paren_depth == 0:
+							last_keyword_seen = ""
+				
 				if first_char == "$":
 					color_map[current_idx] = {"color": VARIABLE_COLOR}
 					color_map[current_idx + 1] = {"color": default_text_color}
+				elif first_char == "!" and (is_conditional_line or in_inline_condition):
+					if current_idx + 1 < line_length and text[current_idx + 1] == "=":
+						color_map[current_idx] = {"color": SYMBOL_COLOR}
+						color_map[current_idx + 2] = {"color": default_text_color}
+						current_idx += 2
+						continue
+					else:
+						color_map[current_idx] = {"color": KEYWORD_COLOR}
+						color_map[current_idx + 1] = {"color": default_text_color}
 				else:
 					color_map[current_idx] = {"color": SYMBOL_COLOR}
 					color_map[current_idx + 1] = {"color": default_text_color}
+				
 				current_idx += 1
 				continue
 
-			# Default skip loop increments for safe spaces
 			current_idx += 1
 
 		line_states[line] = current_state
 		return color_map
+
+	func _highlight_inline_tags(text: String, start_pos: int, end_pos: int, color_map: Dictionary, default_text_color: Color) -> void:
+		var tag_substr = text.substr(start_pos, end_pos - start_pos)
+		var tag_match = tag_regex.search(tag_substr)
+		if tag_match:
+			color_map[start_pos] = {"color": SYMBOL_COLOR}
+			
+			var payload = tag_match.get_string(2)
+			if not payload.is_empty():
+				var payload_start = start_pos + tag_match.get_start(2)
+				var payload_end = start_pos + tag_match.get_end(2)
+				color_map[payload_start] = {"color": default_text_color}
+				color_map[payload_end] = {"color": SYMBOL_COLOR}
+				
+			color_map[end_pos] = {"color": default_text_color}
+		else:
+			color_map[start_pos] = {"color": SYMBOL_COLOR}
+			color_map[end_pos] = {"color": default_text_color}
 
 	func _highlight_nested_bbcode(text: String, start_limit: int, end_limit: int, color_map: Dictionary) -> void:
 		var bb_matches = bbcode_regex.search_all(text)
