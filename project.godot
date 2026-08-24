@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="RPGDL"
+run/main_scene="uid://5cfonekso6uq"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -21,6 +22,8 @@ SignalBus="*uid://ue3r0o31xoxg"
 
 [display]
 
+window/size/viewport_width=640
+window/size/viewport_height=320
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

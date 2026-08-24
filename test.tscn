@@ -2,6 +2,88 @@
 
 [ext_resource type="Script" uid="uid://cwivrhsj8ludj" path="res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd" id="1_37kl0"]
 
-[node name="Test" type="Node" unique_id=655269747]
+[node name="Test" type="Node" unique_id=1033551194]
+
+[node name="RpgDialogueUI" type="Control" parent="." unique_id=1260419336]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_37kl0")
 metadata/_custom_type_script = "uid://cwivrhsj8ludj"
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=19433405]
+visible = false
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.65
+anchor_right = 0.9
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=2012617034]
+layout_mode = 2
+theme_override_constants/margin_left = 13
+theme_override_constants/margin_top = 13
+theme_override_constants/margin_right = 13
+theme_override_constants/margin_bottom = 13
+
+[node name="HSplitContainer" type="HSplitContainer" parent="PanelContainer/MarginContainer" unique_id=723452961]
+layout_mode = 2
+
+[node name="Container" type="CenterContainer" parent="PanelContainer/MarginContainer/HSplitContainer" unique_id=322327803]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/HSplitContainer/Container" unique_id=1829876375]
+
+[node name="TextureRect" type="TextureRect" parent="PanelContainer/MarginContainer/HSplitContainer/Container" unique_id=294440121]
+custom_maximum_size = Vector2(233, 233)
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="PanelContainer/MarginContainer/HSplitContainer" unique_id=763575179]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+text = "text"
+
+[node name="PanelContainer2" type="PanelContainer" parent="." unique_id=1049617757]
+visible = false
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.55
+anchor_right = 0.4
+anchor_bottom = 0.65
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer2" unique_id=1423777009]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+
+[node name="Label" type="Label" parent="PanelContainer2/MarginContainer" unique_id=1596633594]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Narrator"
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=571710713]
+visible = false
+anchors_preset = -1
+anchor_left = 0.79
+anchor_top = 0.4
+anchor_right = 0.99
+anchor_bottom = 0.6
+grow_horizontal = 0
+grow_vertical = 0
+alignment = 2
+
+[node name="Button" type="Button" parent="VBoxContainer" unique_id=633814492]
+layout_mode = 2
+text = "test everything t"
+
+[node name="Button2" type="Button" parent="VBoxContainer" unique_id=514354953]
+layout_mode = 2
+text = "Test"
