@@ -9,7 +9,7 @@
 # namespace master_test
 
 # 2. Imports (Linking shared macros or labels without copy-pasting)
-import "res://dialogue/shared_macros.rpgdl"
+#import "res://dialogue/shared_macros.rpgdl"
 
 # 3. Global Definitions (Usually parsed once in a globals.rpgdl file)
 define npc_hero = Character("Hero", "res://new_sprite_frames.tres")
@@ -33,12 +33,16 @@ label start:
 	npc_smith angry "No, {player_name}, I left it #1 right here!" #test
 	
 	
-	npc_smith angry """This is the last
-	Time that i let you do this {quest_line_01} #1
-	""" <voice: angry_grunt>
+	#npc_smith angry """This is the last
+	#Time that i let you do this {quest_line_01} #1
+	#""" <voice: angry_grunt>
 	
 	# 9. Emitting Godot Signals (Event Bus Triggers with arguments)
 	emit start_quest("find_hammer", 10.0)
+	
+	$karma = 0
+	$gold = 0
+	$salty = -1
 	
 	# 10. Multi-line Block: Menus & Choices
 	menu:

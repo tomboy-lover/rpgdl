@@ -21,7 +21,7 @@ signal dialogue_ended
 @export var rpgdl_script : RPGDLResource = null:
 	set(value):
 		rpgdl_script = value
-		_load_rpgdl_file()
+		_load_rpgdl_file() # consider memory optimization
 
 @export var auto_attach_ui : bool = true
 
@@ -45,7 +45,7 @@ var _last_processed_line : int  = -1
 
 var _loaded_audio : Dictionary[String, RPGDLAudioChannelResource] = {}
 
-var _loaded_characters : Dictionary[String, Variant] = {}
+var _loaded_characters : Dictionary = {}
 
 func _enter_tree() -> void:
 	add_to_group(RPGDL_NODE_GROUP) # for eaiser use with setting the translation
@@ -73,9 +73,6 @@ func _ready() -> void:
 		
 			play.connect(audio_player.handle_play_audio)
 			stop.connect(audio_player.handle_stop_audio)
-	
-	if rpgdl_script:
-		_load_rpgdl_file()
 
 func _load_rpgdl_file() -> void:
 	var loaded_namespaces = [rpgdl_script.name_space]
@@ -106,8 +103,15 @@ func _load_rpgdl_file() -> void:
 	tmp_loaded_audios.merge(rpgdl_script.audio_channels, true)
 	tmp_loaded_chars.merge(rpgdl_script.characters, true)
 	
-	_loaded_audio = tmp_loaded_audios
-	_loaded_characters = tmp_loaded_chars
+	for key in tmp_loaded_audios.keys():
+		_loaded_audio.set(key, load(tmp_loaded_audios[key]['sounds']))
+	for key in tmp_loaded_chars.keys():
+		var tmp_char = tmp_loaded_chars[key]
+		if tmp_char['animations']:
+			tmp_char['animations'] = load(tmp_char['animations'])
+		if tmp_char['textures']:
+			tmp_char['textures'] = load(tmp_char['textures'])
+		_loaded_characters.set(key, tmp_char)
 
 func translate_instruction(line_num: int, current_label: String, instruction: Dictionary) -> Dictionary:
 	var trans_inst = instruction
@@ -121,7 +125,7 @@ func translate_instruction(line_num: int, current_label: String, instruction: Di
 			trans_inst['content'] = tr_value
 	elif instruction['type'] == 'menu_hub':
 		trans_inst = instruction.duplicate_deep()
-		for i in range(trans_inst['choices'].len()):
+		for i in range(len(trans_inst['choices'])):
 			var tr_key = "{ns}_{line}_{label}_{cond}".format({"label": current_label, 
 				"cond": "CHOICE_%02d" % i, "line": "%02d" % line_num, "ns": _current_namespace})
 			var tr_value = tr(tr_key)
@@ -142,6 +146,8 @@ func start_script(start_label : String = "start") -> void:
 		return
 	if _current_state != _NODE_STATES.READY:
 		push_error("rpgdl_script already started")
+		return
+	#_load_rpgdl_file() # removed for performance optimization
 	
 	_current_namespace = rpgdl_script.name_space
 	
@@ -150,15 +156,15 @@ func start_script(start_label : String = "start") -> void:
 	dialogue_started.emit(self)
 	_process_instruction(_current_line)
  
-func make_chioce(choice : int) -> void:
+func make_chioce(choice_idx : int) -> void:
 	if _current_state != _NODE_STATES.AWAIT_CHOICE:
 		push_error("rpgdl_script not awaiting choice")
-	if choice < 0 or choice >= len(_current_choices):
+	if choice_idx < 0 or choice_idx >= len(_current_choices):
 		push_error("invalid choice")
 	_current_state = _NODE_STATES.BUSY
 	
 	# find the line that coresponds to the choice made
-	_current_line = rpgdl_script.bookmarks.get("target")
+	_current_line = rpgdl_script.bookmarks.get(_current_choices[choice_idx].get("target"))
 	_process_instruction(_current_line)
 
 func _interpolate_string(raw_string: String) -> String:
@@ -197,13 +203,13 @@ func _eval_expression(expr: String) -> Variant:
 	clean_expr = clean_expr.strip_edges()
 	var expression = Expression.new()
 	if expression.parse(clean_expr) != OK:
-		push_error("invalid expression")
+		push_error("invalid expression: %s" % expr)
 		return null
 	var result = expression.execute([], RpgdlData) 
 	
 	if not expression.has_execute_failed():
 		return result
-	push_error("unable to evaluate expression")
+	push_error("unable to evaluate expression: %s" % expr)
 	return null
 
 func _math_operation(variable: String, op: String, expr: String) -> void:
@@ -213,6 +219,9 @@ func _math_operation(variable: String, op: String, expr: String) -> void:
 	if op == "=":
 		RpgdlData.world_state[variable] = value
 		return
+	
+	if not RpgdlData.world_state.has(variable):
+		push_error("RpgdlData variable undefined: %s" % variable)
 	
 	match op:
 		"+=":
@@ -232,9 +241,10 @@ func next_dialogue() -> void:
 	if _current_state != _NODE_STATES.AWAIT_DIALOGUE:
 		push_error("rpgdl_script not awaiting dialogue")
 	_current_state = _NODE_STATES.BUSY
-	_process_instruction(_current_line + 1)
+	_process_instruction(_last_processed_line + 1)
 
 func _process_instruction(line_num: int) -> void:
+	print("processing line: %d" % line_num)
 	if line_num == _last_processed_line:
 		push_error("infinite loop encountered line " + str(line_num))
 		return
@@ -272,13 +282,13 @@ func _process_instruction(line_num: int) -> void:
 			dialogue.emit(
 				speaker_name if speaker_char['show_nametag'] else "",
 				_interpolate_string(instruction['content']),
-				instruction['emotion'],
+				instruction['emotion'] if instruction['emotion'] else "",
 				speaker_char['textures'],
 				speaker_char['animations'],
 				self
 			)
 			if instruction['audio']:
-				var d_audio: Array[String] = str(instruction['audio']).split(":")
+				var d_audio: PackedStringArray = str(instruction['audio']).split(":")
 				if len(d_audio) >= 2:
 					var a_channel: String = d_audio[0].strip_edges()
 					var a_sound: String = d_audio[1].strip_edges()
@@ -292,8 +302,6 @@ func _process_instruction(line_num: int) -> void:
 							push_error("sound %s not found in audio channel %s" % [a_sound, a_channel])
 						else:
 							play.emit(a_channel, audio_stream, 0.0)
-			else:
-				push_error("invalid dialogue audio: %s" % instruction['audio'])
 			return # done processing instructions
 			
 		"play":
@@ -302,6 +310,8 @@ func _process_instruction(line_num: int) -> void:
 			elif _loaded_audio.get(instruction['channel'])['sounds'] == null:
 				push_error("audio channel %s is not a valid RPGDLAudioChannelResource" % instruction['channel'])
 			else:
+				var s_sounds = _loaded_audio.get(instruction['channel'])['sounds']
+				var s_sound = s_sounds.get(instruction['sound'])
 				var audio_stream = _loaded_audio.get(instruction['channel'])['sounds'].get(instruction['sound'])
 				if audio_stream == null:
 					push_error("sound %s not found in audio channel %s" % [instruction['sound'], instruction['channel']])
@@ -332,11 +342,11 @@ func _process_instruction(line_num: int) -> void:
 			for a_choice : Dictionary in chioce_list:
 				if a_choice['condition'] != null:
 					if _eval_expression(a_choice['condition']):
-						_current_choices.append({"text": _interpolate_string(a_choice['text']), 'enabled': true, "target": a_choice['target']})
+						_current_choices.append({"text": _interpolate_string(a_choice['text']), 'disabled': false, "target": a_choice['target']})
 					else:
-						_current_choices.append({"text": _interpolate_string(a_choice['alt_text']), 'enabled': false, "target": a_choice['target']})
+						_current_choices.append({"text": _interpolate_string(a_choice['alt_text']), 'disabled': true, "target": a_choice['target']})
 				else:
-					_current_choices.append({"text": _interpolate_string(a_choice['text']), 'enabled': true, "target": a_choice['target']})
+					_current_choices.append({"text": _interpolate_string(a_choice['text']), 'disabled': false, "target": a_choice['target']})
 			choice.emit(_current_choices, self)
 			return
 

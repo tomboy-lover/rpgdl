@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://5cfonekso6uq"]
 
 [ext_resource type="Script" uid="uid://cwivrhsj8ludj" path="res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd" id="1_37kl0"]
+[ext_resource type="Script" uid="uid://cm6oxsm78gb3m" path="res://addons/rpg_dialogue/rpgdl_node.gd" id="2_6uqi0"]
+[ext_resource type="Resource" uid="uid://bgwhrew60rn50" path="res://sample.rpgdl" id="3_ppyta"]
+[ext_resource type="Script" uid="uid://c7allw4d41001" path="res://button.gd" id="4_ppyta"]
 
 [node name="Test" type="Node" unique_id=1033551194]
 
@@ -83,7 +86,23 @@ alignment = 2
 [node name="Button" type="Button" parent="VBoxContainer" unique_id=633814492]
 layout_mode = 2
 text = "test everything t"
+alignment = 0
 
 [node name="Button2" type="Button" parent="VBoxContainer" unique_id=514354953]
 layout_mode = 2
 text = "Test"
+
+[node name="RpgdlNode" type="Node" parent="." unique_id=1553496676]
+script = ExtResource("2_6uqi0")
+rpgdl_script = ExtResource("3_ppyta")
+metadata/_custom_type_script = "uid://cm6oxsm78gb3m"
+
+[node name="Button" type="Button" parent="." unique_id=1063717091]
+offset_left = 373.0
+offset_top = 11.0
+offset_right = 419.0
+offset_bottom = 42.0
+text = "Start Dialogue"
+script = ExtResource("4_ppyta")
+
+[connection signal="pressed" from="Button" to="Button" method="_on_pressed"]
