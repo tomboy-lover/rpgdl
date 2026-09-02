@@ -4,7 +4,7 @@ class_name RpgdlNode
 
 signal dialogue_started(node: RpgdlNode)
 
-signal dialogue(speaker: String, text: String, emotion: String, portrait_res: RPGDLPortraitMapResource, anim_res: SpriteFrames, caller: RpgdlNode)
+signal dialogue(speaker: String, text: String, emotion: String, portrait_res: RPGDLPortraitMapResource, anim_res: SpriteFrames, reveal_text: bool, caller: RpgdlNode)
 
 signal choice(chioces: Array[Dictionary], caller: RpgdlNode)
 
@@ -159,11 +159,14 @@ func start_script(start_label : String = "start") -> void:
 func make_chioce(choice_idx : int) -> void:
 	if _current_state != _NODE_STATES.AWAIT_CHOICE:
 		push_error("rpgdl_script not awaiting choice")
-	if choice_idx < 0 or choice_idx >= len(_current_choices):
+		return
+	elif choice_idx < 0 or choice_idx >= len(_current_choices):
 		push_error("invalid choice")
+		return
 	_current_state = _NODE_STATES.BUSY
 	
 	# find the line that coresponds to the choice made
+	
 	_current_line = rpgdl_script.bookmarks.get(_current_choices[choice_idx].get("target"))
 	_process_instruction(_current_line)
 
@@ -244,7 +247,6 @@ func next_dialogue() -> void:
 	_process_instruction(_last_processed_line + 1)
 
 func _process_instruction(line_num: int) -> void:
-	print("processing line: %d" % line_num)
 	if line_num == _last_processed_line:
 		push_error("infinite loop encountered line " + str(line_num))
 		return
@@ -285,6 +287,7 @@ func _process_instruction(line_num: int) -> void:
 				instruction['emotion'] if instruction['emotion'] else "",
 				speaker_char['textures'],
 				speaker_char['animations'],
+				speaker_char['reveal_text'],
 				self
 			)
 			if instruction['audio']:

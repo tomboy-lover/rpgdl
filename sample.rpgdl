@@ -13,7 +13,7 @@
 
 # 3. Global Definitions (Usually parsed once in a globals.rpgdl file)
 define npc_hero = Character("Hero", "res://new_sprite_frames.tres")
-define npc_smith = Character("Blacksmith", show_name=false)
+define npc_smith = Character("Blacksmith", show_name=false, reveal_text=false)
 define sfx = Audio("res://new_resource.tres")
 define bgm = Audio("res://new_resource.tres")
 
@@ -55,6 +55,8 @@ label start:
 			play sfx quest_accept
 			
 			# 12. Jump Command
+			npc_hero "I must go to the river!"
+			
 			jump search_river
 			
 		"I don't have time for this." if karma > salty else "lacking karma":

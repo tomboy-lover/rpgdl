@@ -396,6 +396,7 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 								var portraits = null
 								var show_nametag = true
 								var temp_resource = null
+								var reveal_text = true
 								# 2. Dynamically loop through the arguments
 								for i in range(def_args.size()):
 									var arg = def_args[i].strip_edges()
@@ -412,6 +413,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 												portraits = value
 											"show_name", "show_nametag":
 												show_nametag = (value.to_lower() == "true")
+											"reveal_text":
+												reveal_text = (value.to_lower() == "true")
 									# Handle Positional Arguments
 									else:
 										var clean_value = arg.trim_prefix('"').trim_suffix('"')
@@ -422,6 +425,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 												portraits = clean_value
 											2:
 												show_nametag = (clean_value.to_lower() == "true")
+											3:
+												reveal_text = (clean_value.to_lower() == "true")
 								# 3. Validation
 								if display_name == "":
 									push_error(error_prefix + " Character requires a name parameter.")
@@ -442,7 +447,8 @@ func _import(source_file: String, save_path: String, options: Dictionary, platfo
 									"name": display_name,
 									"animations": portraits if temp_resource is SpriteFrames else null,
 									"textures": portraits if temp_resource is RPGDLPortraitMapResource else null,
-									"show_nametag": show_nametag
+									"show_nametag": show_nametag,
+									"reveal_text": reveal_text
 								}
 									
 								parsed_chars[var_name] = char_dict

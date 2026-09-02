@@ -126,6 +126,7 @@ func save_current_file() -> void:
 	_update_bar_title(current_file_path.get_file(), open_files[current_file_path]["saved"])
 
 	EditorInterface.get_resource_filesystem().update_file(current_file_path)
+	EditorInterface.get_resource_filesystem().reimport_files([current_file_path])
 	_refresh_sidebar()
 
 

@@ -9,7 +9,7 @@ class_name RpgdlDialogueUi
 @export var use_default_ui: bool = true
 
 ## Text reveal speed in characters per second
-@export_range(0.1, 3.0, 0.1, "or_greater") var text_speed: float = 0.5
+@export_range(1, 20.0, 1, "or_greater") var text_speed: float = 10.0
 
 @export_custom(PROPERTY_HINT_INPUT_NAME, "show_builtin") var next_input_action: StringName = &"ui_accept"
 
@@ -22,6 +22,8 @@ const RPGDL_UI_GROUP = "RpgdlDialogueUi"
 enum UI_STATE {NO_DIALOGUE, SCROLLING, FINISHED}
 
 var _current_dialogue_state: UI_STATE = UI_STATE.NO_DIALOGUE
+
+var _text_reveal_progress: float = 0.0
 
 var _current_rpgdl_node: RpgdlNode
 
@@ -74,10 +76,18 @@ func _process(delta: float) -> void:
 	if use_default_ui:
 		if _current_dialogue_state == UI_STATE.SCROLLING:
 			if Input.is_action_just_pressed(next_input_action) or Input.is_action_pressed(skip_action):
+				_dialogue_ui_text.visible_characters = _dialogue_ui_text.get_total_character_count()
 				_current_dialogue_state = UI_STATE.FINISHED
+			else:
+				_text_reveal_progress += text_speed * delta
+				_dialogue_ui_text.visible_characters = int(_text_reveal_progress)
+				if _dialogue_ui_text.visible_characters >= _dialogue_ui_text.get_total_character_count():
+					_dialogue_ui_text.visible_characters = _dialogue_ui_text.get_total_character_count()
+					_current_dialogue_state = UI_STATE.FINISHED
+					
 		elif _current_dialogue_state == UI_STATE.FINISHED:
 			if Input.is_action_just_pressed(next_input_action) or Input.is_action_pressed(skip_action):
-				_current_dialogue_state == UI_STATE.NO_DIALOGUE
+				_current_dialogue_state = UI_STATE.NO_DIALOGUE
 				_current_rpgdl_node.next_dialogue()
 
 func puase_and_show() -> void:
@@ -90,7 +100,6 @@ func hide_and_resume() -> void:
 	get_tree().paused = false
 	
 func handle_dialogue_started(node: RpgdlNode):
-	print('handle_dialogue_started')
 	if use_default_ui:
 		_current_rpgdl_node = node
 		_choices_parent.visible = false
@@ -104,9 +113,9 @@ func handle_hide_dialogue() -> void:
 		_nametag_ui_parent.visible = false
 		_dialogue_ui_parent.visible = false
 
-func handle_dialogue(speaker: String, text: String, emotion: String, portrait_res: RPGDLPortraitMapResource, anim_res: SpriteFrames, caller: RpgdlNode) -> void:
-	print('handle_dialogue')
+func handle_dialogue(speaker: String, text: String, emotion: String, portrait_res: RPGDLPortraitMapResource, anim_res: SpriteFrames, reveal_text: bool, caller: RpgdlNode) -> void:
 	if use_default_ui:
+		_dialogue_ui_text.text = ""
 		_current_rpgdl_node = caller
 		if speaker == "" or speaker == null:
 			_nametag_ui_label.text = ""
@@ -114,18 +123,26 @@ func handle_dialogue(speaker: String, text: String, emotion: String, portrait_re
 		else:
 			_nametag_ui_label.text = speaker
 			_nametag_ui_parent.visible = true
-		
 		_dialogue_ui_text.text = text
 		_dialogue_ui_parent.visible = true
-		_current_dialogue_state = UI_STATE.SCROLLING
+		if reveal_text:
+			_current_dialogue_state = UI_STATE.SCROLLING
+			_text_reveal_progress = 0.0
+		else:
+			_current_dialogue_state = UI_STATE.FINISHED
+			_dialogue_ui_text.visible_characters = _dialogue_ui_text.get_total_character_count()
+			_text_reveal_progress = _dialogue_ui_text.get_total_character_count()
+			
 
 func handle_choice(chioces: Array[Dictionary], caller: RpgdlNode) -> void:
-	print('handle_choice')
 	if use_default_ui:
+		#_current_dialogue_state = UI_STATE.NO_DIALOGUE
 		_current_rpgdl_node = caller
 		var viewport_size_y = get_viewport().get_visible_rect().size.y
 		for c in _choices_container.get_children():
 			c.queue_free()
+		var first_btn: Button
+		var prev_btn: Button
 		for choice_idx in range(len(chioces)):
 			var choice: Dictionary = chioces[choice_idx]
 			var btn = Button.new()
@@ -134,19 +151,26 @@ func handle_choice(chioces: Array[Dictionary], caller: RpgdlNode) -> void:
 			btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			btn.add_theme_font_size_override("font_size", 24 if viewport_size_y > 360 else 12)
 			btn.pressed.connect(func():
-				print("pressed button %d" % choice_idx)
 				caller.make_chioce(choice_idx)
 				_choices_parent.visible = false
 			)
 			_choices_container.add_child(btn)
+			if choice_idx == 0:
+				first_btn = btn
+				prev_btn = btn
+			else:
+				prev_btn.focus_neighbor_bottom = btn.get_path()
+				btn.focus_neighbor_top = prev_btn.get_path()
+				
 		_choices_parent.visible = true
+		first_btn.grab_focus()
 	
 func handle_dialogue_ended() -> void:
-	print('handle_dialogue_ended')
-	_choices_parent.visible = false
-	_nametag_ui_parent.visible = false
-	_dialogue_ui_parent.visible = false
-	hide_and_resume()
+	if use_default_ui:
+		_choices_parent.visible = false
+		_nametag_ui_parent.visible = false
+		_dialogue_ui_parent.visible = false
+		hide_and_resume()
 
 func _setup_default_ui() -> void:
 	var viewport_size_y = get_viewport().get_visible_rect().size.y
@@ -188,7 +212,6 @@ func _setup_default_ui() -> void:
 	(func(): 
 		_portrait_ui_sprites.position = _portrait_ui_texture.position + (_portrait_ui_texture.size / 2) + Vector2(dial_margin_size, dial_margin_size).round()
 	).call_deferred()
-	print(_portrait_ui_texture.size)
 	_portrait_ui_sprites.position = _portrait_ui_texture.position + _portrait_ui_texture.size
 	
 	
@@ -239,17 +262,3 @@ func _setup_default_ui() -> void:
 	choices_margin.add_theme_constant_override("margin_right", choices_margin_size)
 	choices_margin.add_theme_constant_override("margin_top", choices_margin_size)
 	choices_margin.add_theme_constant_override("margin_bottom", choices_margin_size)
-	
-	var test_button = Button.new()
-	test_button.text = "Click Me"
-	var test_button2 = Button.new()
-	test_button2.text = "Click Me Click Me"
-	var test_button3 = Button.new()
-	test_button3.text = "Click Me"
-	var test_button4 = Button.new()
-	test_button4.text = "Click Me"
-	_choices_container.add_child(test_button)
-	_choices_container.add_child(test_button2)
-	_choices_container.add_child(test_button3)
-	_choices_container.add_child(test_button4)
-	test_button4.add_theme_font_size_override("font_size", 12)

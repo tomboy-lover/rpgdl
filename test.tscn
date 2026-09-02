@@ -2,16 +2,37 @@
 
 [ext_resource type="Script" uid="uid://cwivrhsj8ludj" path="res://addons/rpg_dialogue/rpgdl_dialogue_ui.gd" id="1_37kl0"]
 [ext_resource type="Script" uid="uid://cm6oxsm78gb3m" path="res://addons/rpg_dialogue/rpgdl_node.gd" id="2_6uqi0"]
+[ext_resource type="Texture2D" uid="uid://dwhgbwmlr8oba" path="res://top-down-sprite-study.png" id="2_g14j6"]
 [ext_resource type="Resource" uid="uid://bgwhrew60rn50" path="res://sample.rpgdl" id="3_ppyta"]
 [ext_resource type="Script" uid="uid://c7allw4d41001" path="res://button.gd" id="4_ppyta"]
+[ext_resource type="Texture2D" uid="uid://dw278rq4k2n1a" path="res://WfZNDH_slim-export.png" id="5_ykrsh"]
 
 [node name="Test" type="Node" unique_id=1033551194]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1810306315]
+texture_filter = 1
+position = Vector2(249, 111)
+texture = ExtResource("5_ykrsh")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D" unique_id=131220061]
+texture_filter = 1
+position = Vector2(495, 0)
+scale = Vector2(-1, 1)
+texture = ExtResource("5_ykrsh")
+
+[node name="Sprite2D2" type="Sprite2D" parent="Sprite2D" unique_id=1253327967]
+position = Vector2(306, -117)
+texture = ExtResource("2_g14j6")
 
 [node name="RpgDialogueUI" type="Control" parent="." unique_id=1260419336]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -3.0
+offset_top = 4.0
+offset_right = -3.0
+offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_37kl0")
@@ -102,6 +123,7 @@ offset_left = 373.0
 offset_top = 11.0
 offset_right = 419.0
 offset_bottom = 42.0
+focus_mode = 0
 text = "Start Dialogue"
 script = ExtResource("4_ppyta")
 

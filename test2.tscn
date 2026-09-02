@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://770lixiybbhe"]
+
+[ext_resource type="Texture2D" uid="uid://undra21n3eum" path="res://test_16x19_32.png" id="1_sth5e"]
+[ext_resource type="Texture2D" uid="uid://cltx47p6l4yrt" path="res://top-down-sprite-study_32.png" id="2_sth5e"]
+[ext_resource type="Texture2D" uid="uid://baci0tu02bjkg" path="res://top-down-sprite-study_24.png" id="3_sth5e"]
+
+[node name="Test2" type="Node2D" unique_id=588863964]
+texture_filter = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=255724908]
+texture = ExtResource("1_sth5e")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D" unique_id=1685058670]
+position = Vector2(512, 0)
+texture = ExtResource("1_sth5e")
+
+[node name="Sprite2D2" type="Sprite2D" parent="Sprite2D" unique_id=1451609929]
+position = Vector2(32, 288)
+texture = ExtResource("1_sth5e")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D/Sprite2D2" unique_id=989986445]
+position = Vector2(512, 0)
+texture = ExtResource("1_sth5e")
+
+[node name="Sprite2D2" type="Sprite2D" parent="." unique_id=928387825]
+position = Vector2(272, 175)
+texture = ExtResource("2_sth5e")
+
+[node name="Sprite2D3" type="Sprite2D" parent="." unique_id=2110177815]
+position = Vector2(336, 183)
+texture = ExtResource("3_sth5e")
