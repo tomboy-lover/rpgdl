@@ -248,7 +248,7 @@ jobs:
           USERNAME: ${{ vars.ITCH_USERNAME }}
         run: |
           {
-            echo "## ✅ Demo project uploaded successfully"
+            echo "## ✅ Web HTML project uploaded successfully"
             echo
             echo "| Field | Value |"
             echo "|---|---|"
@@ -256,5 +256,5 @@ jobs:
             echo "| Channel | \`$CHANNEL\` |"
             echo "| Game | \`$USERNAME/$GAME_ID\` |"
             echo
-            echo "The demo project was uploaded to itch.io."
+            echo "The html project was uploaded to itch.io."
           } >> "$GITHUB_STEP_SUMMARY"
