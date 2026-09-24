@@ -50,6 +50,7 @@ jobs:
         with:
           name: ${{ env.ADDON_EXPORT_NAME }}
           path: ${{ env.ADDON_EXPORT_NAME }}.zip
+          retention-days: 7
           if-no-files-found: error
 
   deploy-addon:
@@ -136,6 +137,7 @@ jobs:
         with:
           name: ${{ env.DEMO_EXPORT_NAME }}
           path: ${{ env.DEMO_EXPORT_NAME }}.zip
+          retention-days: 7
           if-no-files-found: error
 
   deploy-demo:
