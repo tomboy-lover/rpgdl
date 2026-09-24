@@ -26,7 +26,7 @@ obj/
 # Build & Export Artifacts
 # ====================================================================
 # Prevents exported game binaries from entering source control
-export_presets.cfg
+# export_presets.cfg
 
 # Add your specific build export folder here if you use one, for example:
 # /exports/
