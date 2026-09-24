@@ -12,6 +12,7 @@ env:
   GODOT_VERSION: 4.7
   ADDON_DIR: rpg_dialogue
   ADDON_EXPORT_NAME: rpgdl
+  DEMO_EXPORT_NAME: rpgdl-demo
   BUILD_VERSION: ${{ inputs.version || github.ref_name }}
 
 jobs:
@@ -91,7 +92,86 @@ jobs:
             echo "The addon was uploaded to itch.io."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  export-demo:
+    name: Zip demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      - name: Update plugin version
+        shell: bash
+        run: |
+          PLUGIN_FILE="addons/${{ env.ADDON_DIR }}/plugin.cfg"
+          sed -i -E \
+            's/^version="[^"]*"/version="${{ env.BUILD_VERSION }}"/' \
+            "$PLUGIN_FILE"
+          grep '^version=' "$PLUGIN_FILE"
+
+      - name: Create demo project .zip
+        shell: bash
+        run: |
+          rm -rf demo-package
+          mkdir -p demo-package
+
+          rsync -av \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='docs/' \
+            --exclude='mkdocs.yml' \
+            --exclude='README.md' \
+            --exclude='LICENSE' \
+            ./ demo-package/
+
+          cd demo-package
+          zip -r ../${{env.DEMO_EXPORT_NAME}}.zip .
+
+      - name: Upload demo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DEMO_EXPORT_NAME }}
+          path: ${{ env.DEMO_EXPORT_NAME }}.zip
+          if-no-files-found: error
+
+  deploy-demo:
+    needs: export-demo
+    name: Upload demo project .zip to Itch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download .zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.DEMO_EXPORT_NAME }}
+          path: ./build
+
+      - uses: KikimoraGames/itch-publish@v0.0.3
+        with:
+          butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
+          gameData: ./build/${{ env.DEMO_EXPORT_NAME }}.zip
+          itchUsername: ${{ vars.ITCH_USERNAME }}
+          itchGameId: ${{ vars.ITCH_GAME_ID }}
+          buildChannel: example-project # gets appended to the filename
+          buildNumber: ${{ env.BUILD_VERSION }}
+
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: example-project
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Demo project uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The demo project was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # export-web:
   #   runs-on: ubuntu-24.04 # Use 24.04 with godot 4
