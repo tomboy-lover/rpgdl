@@ -13,6 +13,7 @@ env:
   ADDON_DIR: rpg_dialogue
   ADDON_EXPORT_NAME: rpgdl
   DEMO_EXPORT_NAME: rpgdl-demo
+  WEB_EXPORT_PROFILE: Web
   BUILD_VERSION: ${{ inputs.version || github.ref_name }}
 
 jobs:
@@ -211,7 +212,7 @@ jobs:
       run: |
         mkdir -v -p build/web
         EXPORT_DIR="$(readlink -f build)"
-        godot --headless --verbose --export-release "ItchioHtml5" "$EXPORT_DIR/web/index.html"
+        godot --headless --verbose --export-release "${{ env.WEB_EXPORT_PROFILE }}" "$EXPORT_DIR/web/index.html"
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
