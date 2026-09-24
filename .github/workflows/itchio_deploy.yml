@@ -111,8 +111,8 @@ jobs:
       - name: Create demo project .zip
         shell: bash
         run: |
-          rm -rf demo-package
-          mkdir -p demo-package
+          STAGING_DIR="$(mktemp -d)"
+          ZIP_PATH="${{ runner.temp }}/${{ env.DEMO_EXPORT_NAME }}.zip"
 
           rsync -av \
             --exclude='.git/' \
@@ -121,10 +121,15 @@ jobs:
             --exclude='mkdocs.yml' \
             --exclude='README.md' \
             --exclude='LICENSE' \
-            ./ demo-package/
+            ./ "$STAGING_DIR/"
 
-          cd demo-package
-          zip -r ../${{env.DEMO_EXPORT_NAME}}.zip .
+          (
+            cd "$STAGING_DIR"
+            zip -r "$ZIP_PATH" .
+          )
+
+          cp "$ZIP_PATH" "${{ env.DEMO_EXPORT_NAME }}.zip"
+          rm -rf "$STAGING_DIR"
 
       - name: Upload demo artifact
         uses: actions/upload-artifact@v4
