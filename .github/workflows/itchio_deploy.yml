@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  GODOT_VERSION: 4.7
+  GODOT_VERSION: 4.7.2
   ADDON_DIR: rpg_dialogue
   ADDON_EXPORT_NAME: rpgdl
   DEMO_EXPORT_NAME: rpgdl-demo
@@ -182,6 +182,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   export-web:
+    name: Build Web html5
     runs-on: ubuntu-24.04 # Use 24.04 with godot 4
     container:
       image: barichello/godot-ci:4.7.2
@@ -206,6 +207,7 @@ jobs:
         name: web
         path: build/web
         retention-days: 7
+        if-no-files-found: error
 
   deploy-web:
     needs: export-web
@@ -224,7 +226,7 @@ jobs:
           itchGameId: ${{ vars.ITCH_GAME_ID }}
           buildChannel: html
           buildNumber: ${{ env.BUILD_VERSION }}
-
+          
       - name: Add deployment summary
         if: ${{ success() }}
         env:
