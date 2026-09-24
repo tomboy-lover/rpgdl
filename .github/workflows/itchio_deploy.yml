@@ -17,6 +17,17 @@ env:
 
 jobs:
 
+  all-builds-pass:
+    name: All exports completed
+    needs:
+      - export-demo
+      - export-addon
+      - export-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm exports completed
+        run: echo "All export jobs completed successfully"
+
   export-addon:
     name: Zip addon
     runs-on: ubuntu-latest
@@ -55,7 +66,7 @@ jobs:
           if-no-files-found: error
 
   deploy-addon:
-    needs: export-addon
+    needs: all-builds-pass
     name: Upload addon .zip to Itch
     runs-on: ubuntu-latest
     steps:
@@ -142,7 +153,7 @@ jobs:
           if-no-files-found: error
 
   deploy-demo:
-    needs: export-demo
+    needs: all-builds-pass
     name: Upload demo project .zip to Itch
     runs-on: ubuntu-latest
     steps:
@@ -210,7 +221,7 @@ jobs:
         if-no-files-found: error
 
   deploy-web:
-    needs: export-web
+    needs: all-builds-pass
     name: Upload Web HTML to Itch
     runs-on: ubuntu-latest
     steps:
