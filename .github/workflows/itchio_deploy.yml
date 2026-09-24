@@ -17,7 +17,7 @@ env:
 jobs:
 
   export-addon:
-    name: Zip Addon
+    name: Zip addon
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -32,19 +32,19 @@ jobs:
             "$PLUGIN_FILE"
           grep '^version=' "$PLUGIN_FILE"
 
-      - name: Create ZIP structure
+      - name: Create .zip structure
         run: |
           mkdir -p package/addons/${{ env.ADDON_DIR }}
           cp -R addons/${{ env.ADDON_DIR }}/. package/addons/${{ env.ADDON_DIR }}/
   # Addition files:
   #       cp USE_AND_ATTRIBUTION.txt package/USE_AND_ATTRIBUTION.txt
 
-      - name: Create addon ZIP
+      - name: Create addon .zip
         run: |
           cd package
           zip -r ../${{ env.ADDON_EXPORT_NAME }}.zip .
       
-      - name: Upload ZIP artifact
+      - name: Upload .zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ADDON_EXPORT_NAME }}
@@ -53,10 +53,10 @@ jobs:
 
   deploy-addon:
     needs: export-addon
-    name: Upload Addon Zip to Itch
+    name: Upload addon .zip to Itch
     runs-on: ubuntu-latest
     steps:
-      - name: Download ZIP artifact
+      - name: Download .zip artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.ADDON_EXPORT_NAME }}
