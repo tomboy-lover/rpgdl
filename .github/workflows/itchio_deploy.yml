@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir -p package/addons/${{ env.ADDON_DIR }}
           cp -R addons/${{ env.ADDON_DIR }}/. package/addons/${{ env.ADDON_DIR }}/
+          cp LICENSE package/addons/${{ env.ADDON_DIR }}/LICENSE
   # Addition files:
   #       cp USE_AND_ATTRIBUTION.txt package/USE_AND_ATTRIBUTION.txt
 
@@ -70,7 +71,7 @@ jobs:
           gameData: ./build/${{ env.ADDON_EXPORT_NAME }}.zip
           itchUsername: ${{ vars.ITCH_USERNAME }}
           itchGameId: ${{ vars.ITCH_GAME_ID }}
-          buildChannel: godot4-addon # gets appended to the filename
+          buildChannel: godot4-addon # gets appended to the ITCH_GAME_ID 
           buildNumber: ${{ env.BUILD_VERSION }}
 
       - name: Add deployment summary
@@ -157,7 +158,7 @@ jobs:
           gameData: ./build/${{ env.DEMO_EXPORT_NAME }}.zip
           itchUsername: ${{ vars.ITCH_USERNAME }}
           itchGameId: ${{ vars.ITCH_GAME_ID }}
-          buildChannel: example-project # gets appended to the filename
+          buildChannel: example-project # gets appended to the ITCH_GAME_ID
           buildNumber: ${{ env.BUILD_VERSION }}
 
       - name: Add deployment summary
@@ -180,44 +181,66 @@ jobs:
             echo "The demo project was uploaded to itch.io."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # export-web:
-  #   runs-on: ubuntu-24.04 # Use 24.04 with godot 4
-  #   container:
-  #     image: barichello/godot-ci:4.7.2
-  #     # https://hub.docker.com/r/barichello/godot-ci/tags
-  #   steps: 
-  #   - name: Checkout
-  #     uses: actions/checkout@v4
-  #     with:
-  #       lfs: true
-  #   - name: Setup
-  #     run: |
-  #       mkdir -v -p ~/.local/share/godot/export_templates/
-  #       mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-  #   - name: Web Build
-  #     run: |
-  #       mkdir -v -p build/web
-  #       EXPORT_DIR="$(readlink -f build)"
-  #       godot --headless --verbose --export-release "ItchioHtml5" "$EXPORT_DIR/web/index.html"
-  #   - name: Upload Artifact
-  #     uses: actions/upload-artifact@v4
-  #     with:
-  #       name: web
-  #       path: build/web
-  #       retention-days: 7
-  # deploy:
-  #   needs: export-web
-  #   name: Upload to Itch
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: web
-  #         path: build/web
-  #     - uses: KikimoraGames/itch-publish@v0.0.3
-  #       with:
-  #         butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
-  #         gameData: ./build/
-  #         itchUsername: ${{ vars.ITCH_USERNAME }}
-  #         itchGameId: ${{ vars.ITCH_GAME_ID }}
-  #         buildChannel: html
+  export-web:
+    runs-on: ubuntu-24.04 # Use 24.04 with godot 4
+    container:
+      image: barichello/godot-ci:4.7.2
+      # https://hub.docker.com/r/barichello/godot-ci/tags
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+    - name: Setup
+      run: |
+        mkdir -v -p ~/.local/share/godot/export_templates/
+        mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+    - name: Web build
+      run: |
+        mkdir -v -p build/web
+        EXPORT_DIR="$(readlink -f build)"
+        godot --headless --verbose --export-release "ItchioHtml5" "$EXPORT_DIR/web/index.html"
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: web
+        path: build/web
+        retention-days: 7
+
+  deploy-web:
+    needs: export-web
+    name: Upload Web HTML to Itch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: build/web
+      - uses: KikimoraGames/itch-publish@v0.0.3
+        with:
+          butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
+          gameData: ./build/
+          itchUsername: ${{ vars.ITCH_USERNAME }}
+          itchGameId: ${{ vars.ITCH_GAME_ID }}
+          buildChannel: html
+          buildNumber: ${{ env.BUILD_VERSION }}
+
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: html
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Demo project uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The demo project was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
