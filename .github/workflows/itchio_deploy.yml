@@ -71,6 +71,26 @@ jobs:
           buildChannel: godot4-addon # gets appended to the filename
           buildNumber: ${{ env.BUILD_VERSION }}
 
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: godot4-addon
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Addon uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The addon was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
+
 
 
   # export-web:
