@@ -68,7 +68,7 @@ jobs:
           gameData: ./build/${{ env.ADDON_EXPORT_NAME }}.zip
           itchUsername: ${{ vars.ITCH_USERNAME }}
           itchGameId: ${{ vars.ITCH_GAME_ID }}
-          buildChannel: godot4-plugin
+          buildChannel: godot4-addon
           buildNumber: ${{ env.BUILD_VERSION }}
 
 
