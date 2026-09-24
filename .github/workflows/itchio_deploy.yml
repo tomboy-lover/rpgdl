@@ -1,0 +1,260 @@
+name: Itch Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 1.2.3"
+        required: true
+        type: string
+
+env:
+  GODOT_VERSION: 4.7.2
+  ADDON_DIR: rpg_dialogue
+  ADDON_EXPORT_NAME: rpgdl
+  DEMO_EXPORT_NAME: rpgdl-demo
+  WEB_EXPORT_PROFILE: Web
+  BUILD_VERSION: ${{ inputs.version || github.ref_name }}
+
+jobs:
+
+  all-builds-pass:
+    name: All exports completed
+    needs:
+      - export-demo
+      - export-addon
+      - export-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm exports completed
+        run: echo "All export jobs completed successfully"
+
+  export-addon:
+    name: Zip addon
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update plugin version
+        shell: bash
+        run: |
+          PLUGIN_FILE="addons/${{ env.ADDON_DIR }}/plugin.cfg"
+          sed -i -E \
+            's/^version="[^"]*"/version="${{ env.BUILD_VERSION }}"/' \
+            "$PLUGIN_FILE"
+          grep '^version=' "$PLUGIN_FILE"
+
+      - name: Create .zip structure
+        run: |
+          mkdir -p package/addons/${{ env.ADDON_DIR }}
+          cp -R addons/${{ env.ADDON_DIR }}/. package/addons/${{ env.ADDON_DIR }}/
+          cp LICENSE package/addons/${{ env.ADDON_DIR }}/LICENSE
+  # Addition files:
+  #       cp USE_AND_ATTRIBUTION.txt package/USE_AND_ATTRIBUTION.txt
+
+      - name: Create addon .zip
+        run: |
+          cd package
+          zip -r ../${{ env.ADDON_EXPORT_NAME }}.zip .
+      
+      - name: Upload .zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ADDON_EXPORT_NAME }}
+          path: ${{ env.ADDON_EXPORT_NAME }}.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy-addon:
+    needs: all-builds-pass
+    name: Upload addon .zip to Itch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download .zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ADDON_EXPORT_NAME }}
+          path: ./build
+
+      - uses: KikimoraGames/itch-publish@v0.0.3
+        with:
+          butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
+          gameData: ./build/${{ env.ADDON_EXPORT_NAME }}.zip
+          itchUsername: ${{ vars.ITCH_USERNAME }}
+          itchGameId: ${{ vars.ITCH_GAME_ID }}
+          buildChannel: godot4-addon # gets appended to the ITCH_GAME_ID 
+          buildNumber: ${{ env.BUILD_VERSION }}
+
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: godot4-addon
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Addon uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The addon was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  export-demo:
+    name: Zip demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update plugin version
+        shell: bash
+        run: |
+          PLUGIN_FILE="addons/${{ env.ADDON_DIR }}/plugin.cfg"
+          sed -i -E \
+            's/^version="[^"]*"/version="${{ env.BUILD_VERSION }}"/' \
+            "$PLUGIN_FILE"
+          grep '^version=' "$PLUGIN_FILE"
+
+      - name: Create demo project .zip
+        shell: bash
+        run: |
+          STAGING_DIR="$(mktemp -d)"
+          ZIP_PATH="${{ runner.temp }}/${{ env.DEMO_EXPORT_NAME }}.zip"
+
+          rsync -av \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='docs/' \
+            --exclude='mkdocs.yml' \
+            --exclude='README.md' \
+            --exclude='LICENSE' \
+            ./ "$STAGING_DIR/"
+
+          (
+            cd "$STAGING_DIR"
+            zip -r "$ZIP_PATH" .
+          )
+
+          cp "$ZIP_PATH" "${{ env.DEMO_EXPORT_NAME }}.zip"
+          rm -rf "$STAGING_DIR"
+
+      - name: Upload demo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DEMO_EXPORT_NAME }}
+          path: ${{ env.DEMO_EXPORT_NAME }}.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy-demo:
+    needs: all-builds-pass
+    name: Upload demo project .zip to Itch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download .zip artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.DEMO_EXPORT_NAME }}
+          path: ./build
+
+      - uses: KikimoraGames/itch-publish@v0.0.3
+        with:
+          butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
+          gameData: ./build/${{ env.DEMO_EXPORT_NAME }}.zip
+          itchUsername: ${{ vars.ITCH_USERNAME }}
+          itchGameId: ${{ vars.ITCH_GAME_ID }}
+          buildChannel: example-project # gets appended to the ITCH_GAME_ID
+          buildNumber: ${{ env.BUILD_VERSION }}
+
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: example-project
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Demo project uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The demo project was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  export-web:
+    name: Build Web html5
+    runs-on: ubuntu-24.04 # Use 24.04 with godot 4
+    container:
+      image: barichello/godot-ci:4.7.2
+      # https://hub.docker.com/r/barichello/godot-ci/tags
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+    - name: Setup
+      run: |
+        mkdir -v -p ~/.local/share/godot/export_templates/
+        mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+    - name: Web build
+      run: |
+        mkdir -v -p build/web
+        EXPORT_DIR="$(readlink -f build)"
+        godot --headless --verbose --export-release "${{ env.WEB_EXPORT_PROFILE }}" "$EXPORT_DIR/web/index.html"
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: web
+        path: build/web
+        retention-days: 7
+        if-no-files-found: error
+
+  deploy-web:
+    needs: all-builds-pass
+    name: Upload Web HTML to Itch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: build/web
+      - uses: KikimoraGames/itch-publish@v0.0.3
+        with:
+          butlerApiKey: ${{ secrets.ITCH_BUTLER_API_KEY }}
+          gameData: ./build/
+          itchUsername: ${{ vars.ITCH_USERNAME }}
+          itchGameId: ${{ vars.ITCH_GAME_ID }}
+          buildChannel: html
+          buildNumber: ${{ env.BUILD_VERSION }}
+          
+      - name: Add deployment summary
+        if: ${{ success() }}
+        env:
+          VERSION: ${{ env.BUILD_VERSION }}
+          CHANNEL: html
+          GAME_ID: ${{ vars.ITCH_GAME_ID }}
+          USERNAME: ${{ vars.ITCH_USERNAME }}
+        run: |
+          {
+            echo "## ✅ Web HTML project uploaded successfully"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`$VERSION\` |"
+            echo "| Channel | \`$CHANNEL\` |"
+            echo "| Game | \`$USERNAME/$GAME_ID\` |"
+            echo
+            echo "The html project was uploaded to itch.io."
+          } >> "$GITHUB_STEP_SUMMARY"
